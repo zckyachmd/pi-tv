@@ -1,0 +1,5 @@
+# ADR 001 — BLE remote
+
+Status: owner-directed outcome, proposed implementation. Authority: product owner after platform/security review.
+
+**Context:** Remote must work without shared network; phone does not carry media. **Alternatives:** LAN Bonjour/WSS requires shared IP; browser remote adds trust and platform limitations; BLE meets direction conditionally. **Direction:** iOS central and Pi GATT peripheral, QR-assisted application enrollment. **Rationale/tradeoff:** independent of LAN, but small payloads, radio contention and OS lifecycle add complexity. **Evidence:** [Apple CoreBluetooth](https://developer.apple.com/documentation/corebluetooth), [BlueZ GATT API](https://bluez.readthedocs.io/en/latest/gatt-api/) reviewed 2026-11-27 describe APIs, not target behavior. **Consequences:** explicit framing, state recovery and no default LAN fallback. **Validation:** physical iPhone, actual adapter/BlueZ, permissions, no-IP, foreground recovery and coexistence. See [protocol](../BLE_PROTOCOL.md).

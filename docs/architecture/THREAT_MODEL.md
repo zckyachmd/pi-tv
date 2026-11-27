@@ -1,0 +1,18 @@
+# Threat model and security gates
+
+Proposed, 2026-11-27. Assets: device identity and enrollment secret, phone credentials, commands, provider sessions, local host services and availability. Attackers include nearby unauthenticated radios, a malicious provider page, a compromised phone, a local unprivileged process and a malicious dependency. Root compromise, physical compromise of the Pi, RF jamming and relay-resistant proximity are not solved by this design. BLE OS bonding is not app authorization.
+
+| Threat | Candidate controls | Required negative test / residual risk |
+|---|---|---|
+| Rogue peripheral / MITM | QR pins Pi identity; reviewed authenticated channel binds roles, negotiation and transcript | Wrong identity, modified handshake and downgrade fail; a user scanning an attacker-controlled displayed QR can still enroll attacker. |
+| Rogue central / unauthorized command | One-use high entropy QR secret, explicit local confirmation, per-peer identity and authorization | Unknown/bonded-only peer cannot send; attempt limits and confirmation must not permanently deny legitimate pairing. |
+| QR theft/reuse | Short local deadline, atomic consume, no logging; safe crash recovery | Captured, expired, reused and crash-interrupted QR rejected; photographed QR can be abused during its window if confirmation is fooled. |
+| Replay / downgrade | Reviewed secure-channel sequence/replay protections, bound versions and fresh keys | Replay records and negotiation attempts, restart and counter exhaustion fail closed; exact construction is blocked on ADR. |
+| Malformed fragments / resource exhaustion | Pre-allocation bounds, global/per-peer caps, expiry and bounded queues | Fuzz lengths/order and concurrent peers; measure memory and recovery; radio jamming remains possible. |
+| Lost phone / revoked peer | Keychain device-bound credential, local revoke, durable deny, session termination | Revoke while connected, restart and reconnect reject; unlocked stolen phone before revocation remains a risk. |
+| Malicious browser page | Browser sandbox, isolated profile/session, narrow trusted launcher bridge, private CDP pipe candidate | Attempt loopback, DNS rebinding, cross-origin, raw CDP and local file access; no IPC mechanism accepted before isolation proof. |
+| Shared-host privilege | Dedicated non-root identity/cgroup, narrow OS access, no host shutdown or global Bluetooth edits | Verify access denial and resource abort with representative workloads; cgroups do not isolate every GPU/I/O failure. |
+| Credential exposure | Restrictive stores, atomic writes, Keychain, no secrets in logs, explicit reset and backup policy | Check permissions, logs, crash artifacts and backups; compromised same-privilege process may still access its files. |
+| Supply chain | Pin reviewed lockfiles/toolchains, inventory licenses and advisories, verify release provenance, least-privilege CI | Rebuild and scan SBOM, test compromised dependency and release credential containment; no guarantee dependencies are defect-free. |
+
+Security acceptance requires independent review of selected handshake, identity and recovery lifecycle, byte-stream/framing integration, trust boundary tests, physical iPhone/BlueZ interoperability, fuzzing and bounded-resource tests. No production pairing until those pass. Distribution additionally requires GPL scope, App Store terms, third-party licensing and trademark review; no legal conclusion is implied. See [protocol](BLE_PROTOCOL.md) and [risk register](RISK_REGISTER.md).

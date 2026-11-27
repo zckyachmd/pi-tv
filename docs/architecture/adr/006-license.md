@@ -1,0 +1,5 @@
+# ADR 006 — License and marks
+
+Status: GPL-3.0-only proposed, separate trademark policy owner-directed; authority: product owner with appropriate legal review.
+
+**Context:** distribution of source, packages and iOS app involves distinct rights and terms. **Alternatives:** GPL-3.0-or-later, GPL-3.0-only, or another license subject to contributor consent. **Direction:** propose GPL-3.0-only for first-party code and separate mark policy, without noncommercial restrictions or compulsory upstream contributions. **Rationale/tradeoff:** fixed license terms and mark clarity; contributor provenance, third-party rights and distribution obligations remain unresolved. **Evidence:** [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.html), [Apple App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/) reviewed 2026-11-27 do not establish compatibility of a particular distribution. **Consequences:** no license grant, exception, mark ownership or App Store compatibility is presumed by this ADR. **Validation:** contributor/asset/dependency audit, corresponding-source process, trademark rights and current distribution terms review before release.

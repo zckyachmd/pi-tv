@@ -36,3 +36,5 @@ subjectAltName = DNS:pi-tv.test
 CONFIG
 openssl ca -batch -config "$out/ca.cnf" -in "$out/server.csr" -out "$out/expired.pem" -startdate 20200101000000Z -enddate 20200102000000Z -extensions server_ext -notext >/dev/null 2>&1
 openssl x509 -in "$out/expired.pem" -outform DER -out "$out/expired.der"
+openssl req -new -newkey ec -pkeyopt ec_paramgen_curve:P-256 -nodes -keyout "$out/alternate.key" -out "$out/alternate.csr" -subj /CN=pi-tv-alternate >/dev/null 2>&1
+openssl x509 -req -in "$out/alternate.csr" -CA "$out/ca.pem" -CAkey "$out/ca.key" -CAcreateserial -out "$out/alternate.pem" -days 1 -extfile "$out/client.ext" >/dev/null 2>&1

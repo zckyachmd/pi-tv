@@ -3,6 +3,7 @@ import Foundation
 import Darwin
 import Dispatch
 
+enum Trace { static var admitted = 0; static var delivered = 0 }
 struct Failure: Error { let message: String; init(_ message: String) { self.message = message } }
 
 func check(_ result: UInt32, _ step: String) throws {
@@ -18,15 +19,92 @@ func frame(_ payload: [UInt8]) -> [UInt8] {
     let n = UInt32(payload.count)
     return [UInt8(n >> 24), UInt8((n >> 16) & 255), UInt8((n >> 8) & 255), UInt8(n & 255)] + payload
 }
+final class FrameDecoder {
+    private var pending: [UInt8] = []
+    func feed(_ bytes: [UInt8]) throws -> [[UInt8]] {
+        pending += bytes
+        var messages: [[UInt8]] = []
+        while pending.count >= 4 {
+            let count = pending.prefix(4).reduce(0) { ($0 << 8) | Int($1) }
+            guard count <= 4092 else { throw Failure("oversized frame") }
+            guard pending.count >= count + 4 else { break }
+            messages.append(Array(pending[4..<(4 + count)])); pending.removeFirst(4 + count)
+        }
+        guard pending.count <= 4096 else { throw Failure("frame buffer limit") }
+        return messages
+    }
+    func finish() throws { guard pending.isEmpty else { throw Failure("incomplete frame") } }
+}
 func unframe(_ bytes: [UInt8]) throws -> [UInt8] {
-    guard bytes.count >= 4 else { throw Failure("short frame") }
-    let n = bytes.prefix(4).reduce(0) { ($0 << 8) | Int($1) }
-    guard n <= 4092, bytes.count == n + 4 else { throw Failure("invalid frame") }
-    return Array(bytes.dropFirst(4))
+    let decoder = FrameDecoder(); let messages = try decoder.feed(bytes); try decoder.finish()
+    guard messages.count == 1 else { throw Failure("message count") }
+    return messages[0]
+}
+
+final class Client {
+    enum State { case handshaking, admitted, failed, shutdown }
+    private let handle: OpaquePointer
+    private(set) var state: State = .handshaking
+    private(set) var generation: UInt64 = 1
+    private var inCall = false
+    private let thread = Thread.current
+    func access<T>(generation token: UInt64, _ body: () throws -> T) throws -> T {
+        guard Thread.current === thread, token == generation, state != .failed, state != .shutdown, !inCall else { throw Failure("stale or reentrant client operation") }
+        inCall = true; defer { inCall = false }
+        return try body()
+    }
+    func cancel() { if state != .failed && state != .shutdown { state = .failed; generation += 1 } }
+    private let pin: [UInt8]
+    private let expectedALPN = Array("pi-tv-experiment/1".utf8)
+    init(_ handle: OpaquePointer, pin: [UInt8]) { self.handle = handle; self.pin = pin }
+    func fail() { cancel() }
+    func admit() throws {
+        guard state == .handshaking else { throw Failure("invalid admission state") }
+        guard !rustls_connection_is_handshaking(handle), rustls_connection_get_protocol_version(handle) == 0x0304,
+              rustls_connection_handshake_kind(handle) == RUSTLS_HANDSHAKE_KIND_FULL else { fail(); throw Failure("protocol/handshake kind") }
+        var value: UnsafePointer<UInt8>?; var count = 0
+        rustls_connection_get_alpn_protocol(handle, &value, &count)
+        guard let value, Array(UnsafeBufferPointer(start: value, count: count)) == expectedALPN else { fail(); throw Failure("ALPN") }
+        guard let peer = rustls_connection_get_peer_certificate(handle, 0) else { fail(); throw Failure("server certificate") }
+        var der: UnsafePointer<UInt8>?; var length = 0
+        do { try check(rustls_certificate_get_der(peer, &der, &length), "server certificate der") } catch { fail(); throw error }
+        guard let der, Array(UnsafeBufferPointer(start: der, count: length)) == pin else { fail(); throw Failure("server pin") }
+        state = .admitted; Trace.admitted += 1
+    }
+    func write(_ bytes: [UInt8]) throws -> Int {
+        guard state == .admitted else { throw Failure("client not admitted") }
+        return try access(generation: generation) {
+            var count = 0
+            do { try check(bytes.withUnsafeBufferPointer { rustls_connection_write(handle, $0.baseAddress, $0.count, &count) }, "client write") }
+            catch { fail(); throw error }
+            return count
+        }
+    }
+    func read(_ bytes: inout [UInt8]) throws -> Int {
+        guard state == .admitted else { throw Failure("client not admitted") }
+        return try access(generation: generation) {
+            var count = 0
+            let result = bytes.withUnsafeMutableBufferPointer { rustls_connection_read(handle, $0.baseAddress, $0.count, &count) }
+            if result == RUSTLS_RESULT_PLAINTEXT_EMPTY.rawValue { return -1 }
+            do { try check(result, "client plaintext") } catch { fail(); throw error }
+            return count
+        }
+    }
+    func shutdown() throws {
+        guard state == .admitted else { throw Failure("client not admitted") }
+        rustls_connection_send_close_notify(handle); state = .shutdown
+    }
 }
 
 func run() throws {
-do { _ = try unframe([0, 0, 0, 3, 42]); throw Failure("accepted incomplete frame") } catch let e as Failure { guard e.message == "invalid frame" else { throw e } }
+let parser = FrameDecoder()
+let sample = frame([1, 2, 3])
+guard try parser.feed(Array(sample.prefix(2))).isEmpty, try parser.feed(Array(sample[2..<5])).isEmpty,
+      try parser.feed(Array(sample.dropFirst(5)) + frame([4])) == [[1, 2, 3], [4]] else { throw Failure("stream parser") }
+try parser.finish()
+guard try FrameDecoder().feed(frame([UInt8](repeating: 1, count: 4092))).first?.count == 4092 else { throw Failure("max frame") }
+do { _ = try FrameDecoder().feed([0, 0, 16, 0]); throw Failure("accepted oversize") } catch let e as Failure { guard e.message == "oversized frame" else { throw e } }
+do { _ = try unframe([0, 0, 0, 3, 42]); throw Failure("accepted incomplete frame") } catch let e as Failure { guard e.message == "incomplete frame" else { throw e } }
 precondition(classifyIO(0) == .ok && classifyIO(EWOULDBLOCK) == .wouldBlock && classifyIO(EINVAL) == .ambiguous && classifyIO(EIO) == .fatal)
 
 let dir = CommandLine.arguments[1]
@@ -37,8 +115,8 @@ let selectedServer = scenario == "expired" ? file("expired.der") : serverDER
 var expectedClient = clientDER
 if scenario == "wrong-client-pin" { expectedClient[0] ^= 1 }
 let trustPEM = scenario == "rogue-root" ? file("rogue-ca.pem") : caPEM
-let selectedClientPEM = scenario == "wrong-usage" ? file("server.pem") : clientPEM
-let selectedClientKey = scenario == "wrong-usage" ? file("server.key") : clientKey
+let selectedClientPEM = scenario == "wrong-usage" ? file("server.pem") : scenario == "alternate-client" ? file("alternate.pem") : clientPEM
+let selectedClientKey = scenario == "wrong-usage" ? file("server.key") : scenario == "alternate-client" ? file("alternate.key") : clientKey
 let started = DispatchTime.now().uptimeNanoseconds
 let server = caDER.withUnsafeBufferPointer { ca in selectedServer.withUnsafeBufferPointer { cert in serverKey.withUnsafeBufferPointer { key in expectedClient.withUnsafeBufferPointer { client in
     experiment_server_new(ca.baseAddress, ca.count, cert.baseAddress, cert.count, key.baseAddress, key.count, client.baseAddress, client.count)
@@ -63,36 +141,48 @@ defer { rustls_server_cert_verifier_free(verifier) }
 var builder: OpaquePointer?
 var version: UInt16 = scenario == "tls12" ? 0x0303 : 0x0304
 try check(rustls_client_config_builder_new_custom(provider, &version, 1, &builder), "client builder")
-guard let builder else { throw Failure("builder") }
-rustls_client_config_builder_set_server_verifier(builder, verifier)
+guard let clientBuilder = builder else { throw Failure("builder") }
+defer { if let builder { rustls_client_config_builder_free(builder) } }
+if scenario == "inject-builder" { throw Failure("injected builder failure") }
+rustls_client_config_builder_set_server_verifier(clientBuilder, verifier)
 let alpn = Array((scenario == "wrong-alpn" ? "wrong/1" : "pi-tv-experiment/1").utf8)
-if scenario != "missing-alpn" { try check(alpn.withUnsafeBufferPointer { p in var bytes = rustls_slice_bytes(data: p.baseAddress, len: p.count); return rustls_client_config_builder_set_alpn_protocols(builder, &bytes, 1) }, "alpn") }
+if scenario != "missing-alpn" { try check(alpn.withUnsafeBufferPointer { p in var bytes = rustls_slice_bytes(data: p.baseAddress, len: p.count); return rustls_client_config_builder_set_alpn_protocols(clientBuilder, &bytes, 1) }, "alpn") }
 var certified: OpaquePointer?
 try check(selectedClientPEM.withUnsafeBufferPointer { cert in selectedClientKey.withUnsafeBufferPointer { key in rustls_certified_key_build(cert.baseAddress, cert.count, key.baseAddress, key.count, &certified) } }, "client key")
 guard let certified else { throw Failure("key") }
 defer { rustls_certified_key_free(certified) }
 var keyOpt: OpaquePointer? = certified
-if scenario != "missing-client" { try check(rustls_client_config_builder_set_certified_key(builder, &keyOpt, 1), "client cert") }
+if scenario != "missing-client" { try check(rustls_client_config_builder_set_certified_key(clientBuilder, &keyOpt, 1), "client cert") }
+if scenario == "inject-config" { throw Failure("injected config failure") }
 var config: OpaquePointer?
-try check(rustls_client_config_builder_build(builder, &config), "client config")
+let buildResult = rustls_client_config_builder_build(clientBuilder, &config)
+builder = nil // build consumes the builder on success and failure
+try check(buildResult, "client config")
 guard let config else { throw Failure("config") }
 defer { rustls_client_config_free(config) }
+if scenario == "inject-connection" { throw Failure("injected connection failure") }
 var client: OpaquePointer?
 try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &client), "client")
 guard let client else { throw Failure("client") }
 defer { rustls_connection_free(client) }
 rustls_connection_set_buffer_limit(client, 16384)
+let clientOwner = Client(client, pin: scenario == "wrong-server-pin" ? [] : serverDER)
+defer { clientOwner.fail() }
+do { _ = try clientOwner.write([1]); throw Failure("pre-admission client write allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
+var premature = [UInt8](repeating: 0, count: 4)
+do { _ = try clientOwner.read(&premature); throw Failure("pre-admission client read allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
 
 final class Buffer {
     var bytes: [UInt8] = []
     var total = 0
     var high = 0
+    var lastChunk: [UInt8] = []
     var nextID: UInt64 = 1
     var outstanding: UInt64?
     var receivedID: UInt64 = 0
     func enqueue(_ chunk: [UInt8]) -> Bool {
         guard outstanding == nil, bytes.isEmpty, !chunk.isEmpty, chunk.count <= 4096 else { return false }
-        bytes = chunk; outstanding = nextID; nextID += 1; high = max(high, chunk.count); total += chunk.count
+        bytes = chunk; lastChunk = chunk; outstanding = nextID; nextID += 1; high = max(high, chunk.count); total += chunk.count
         return true
     }
     func receipt(_ id: UInt64) -> Bool {
@@ -112,7 +202,18 @@ let readCB: rustls_read_callback = { ctx, p, n, count in
     let take = min(n, b.bytes.count); b.bytes.withUnsafeBufferPointer { p!.update(from: $0.baseAddress!, count: take) }; b.bytes.removeFirst(take); count!.pointee = take; return 0
 }
 let outPtr = Unmanaged.passUnretained(out).toOpaque(), inPtr = Unmanaged.passUnretained(input).toOpaque()
-if scenario == "cancel" { throw Failure("injected cancellation") }
+if scenario == "cancel" {
+    let old = clientOwner.generation
+    clientOwner.cancel(); clientOwner.cancel()
+    do { _ = try clientOwner.access(generation: old) { 1 }; throw Failure("stale generation allowed") }
+    catch let e as Failure { guard e.message == "stale or reentrant client operation" else { throw e } }
+    throw Failure("injected cancellation")
+}
+let token = clientOwner.generation
+try clientOwner.access(generation: token) {
+    do { _ = try clientOwner.access(generation: token) { 1 }; throw Failure("reentrancy allowed") }
+    catch let e as Failure { guard e.message == "stale or reentrant client operation" else { throw e } }
+}
 if scenario == "inject-panic" { try check(RUSTLS_RESULT_PANIC.rawValue, "injected") }
 var serverBytes = 0
 var didCorrupt = false
@@ -157,30 +258,48 @@ for _ in 0..<1000 {
     if DispatchTime.now().uptimeNanoseconds - started > 5_000_000_000 { throw Failure("handshake deadline") }
 }
 guard !rustls_connection_is_handshaking(client), experiment_server_admit(server) == 1 else { throw Failure("handshake incomplete") }
-guard rustls_connection_get_protocol_version(client) == 0x0304, rustls_connection_handshake_kind(client) == RUSTLS_HANDSHAKE_KIND_FULL else { throw Failure("protocol/handshake kind") }
-var negotiated: UnsafePointer<UInt8>?; var alpnLen = 0
-rustls_connection_get_alpn_protocol(client, &negotiated, &alpnLen)
-guard let negotiated, Array(UnsafeBufferPointer(start: negotiated, count: alpnLen)) == alpn else { throw Failure("ALPN") }
-guard let peer = rustls_connection_get_peer_certificate(client, 0) else { throw Failure("server certificate") }
-var der: UnsafePointer<UInt8>?; var derLen = 0
-try check(rustls_certificate_get_der(peer, &der, &derLen), "server certificate der")
-guard let der, Array(UnsafeBufferPointer(start: der, count: derLen)) == (scenario == "wrong-server-pin" ? [] : serverDER) else { throw Failure("server pin") }
+try clientOwner.admit()
+var emptyProbe = [UInt8](repeating: 0, count: 1)
+guard try clientOwner.read(&emptyProbe) == -1 else { throw Failure("plaintext empty mapping") }
 let handshakeMs = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000
 let messageStarted = DispatchTime.now().uptimeNanoseconds
-let message = frame(Array("swift-to-rust".utf8)); var written = 0
-try check(message.withUnsafeBufferPointer { rustls_connection_write(client, $0.baseAddress, $0.count, &written) }, "client write")
+let message = frame(Array("swift-to-rust".utf8))
+let written = try clientOwner.write(message)
 guard written == message.count else { throw Failure("short write") }
 let reply = frame(Array("rust-to-swift".utf8))
 let replyCount = reply.withUnsafeBufferPointer { experiment_server_write(server, $0.baseAddress, $0.count) }
 guard replyCount == reply.count else { throw Failure("server write") }
 for _ in 0..<20 { try pump() }
-var received = [UInt8](repeating: 0, count: 4096)
-let n = received.withUnsafeMutableBufferPointer { experiment_server_read(server, $0.baseAddress, $0.count) }
-guard n == message.count, (try unframe(Array(received.prefix(n)))) == Array("swift-to-rust".utf8) else { throw Failure("server plaintext") }
+var received = [UInt8](repeating: 0, count: 3)
+let serverParser = FrameDecoder()
+var serverMessages: [[UInt8]] = []
+for _ in 0..<4096 {
+    let n = received.withUnsafeMutableBufferPointer { experiment_server_read(server, $0.baseAddress, $0.count) }
+    guard n > 0 else { throw Failure("server plaintext") }
+    serverMessages += try serverParser.feed(Array(received.prefix(n)))
+    if !serverMessages.isEmpty { break }
+}
+try serverParser.finish()
+guard serverMessages == [Array("swift-to-rust".utf8)] else { throw Failure("server plaintext") }
+Trace.delivered += 1
+if scenario == "replay" {
+    let result = out.lastChunk.withUnsafeBufferPointer { experiment_server_input(server, $0.baseAddress, $0.count) }
+    guard result == -1 else { throw Failure("replayed ciphertext accepted") }
+    throw Failure("replayed ciphertext rejected")
+}
 for _ in 0..<20 { try pump() }
+let clientParser = FrameDecoder()
+var clientMessages: [[UInt8]] = []
+for _ in 0..<4096 {
+    let count = try clientOwner.read(&received)
+    guard count > 0 else { throw Failure("client plaintext EOF") }
+    clientMessages += try clientParser.feed(Array(received.prefix(count)))
+    if !clientMessages.isEmpty { break }
+}
+try clientParser.finish()
+guard clientMessages == [Array("rust-to-swift".utf8)] else { throw Failure("client plaintext mismatch") }
+Trace.delivered += 1
 var read = 0
-try check(received.withUnsafeMutableBufferPointer { rustls_connection_read(client, $0.baseAddress, $0.count, &read) }, "client plaintext")
-guard (try unframe(Array(received.prefix(read)))) == Array("rust-to-swift".utf8) else { throw Failure("client plaintext mismatch") }
 let messageMs = Double(DispatchTime.now().uptimeNanoseconds - messageStarted) / 1_000_000
 if scenario == "truncate" {
     let eof: rustls_read_callback = { _, _, _, n in n!.pointee = 0; return 0 }
@@ -192,7 +311,9 @@ if scenario == "truncate" {
     throw Failure("unexpected EOF detected")
 }
 closing = true
-rustls_connection_send_close_notify(client)
+try clientOwner.shutdown()
+do { _ = try clientOwner.write([1]); throw Failure("shutdown client write allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
+do { _ = try clientOwner.read(&premature); throw Failure("shutdown client read allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
 for _ in 0..<20 { try pump() }
 let serverEOF = received.withUnsafeMutableBufferPointer { experiment_server_read(server, $0.baseAddress, $0.count) }
 guard serverEOF == 0 else { throw Failure("server close_notify") }
@@ -209,5 +330,6 @@ do {
     guard experiment_server_free_count() == beforeFree + 1 else { throw Failure("server cleanup count") }
 } catch {
     guard experiment_server_free_count() == beforeFree + 1 else { fputs("server cleanup count failure\n", stderr); exit(2) }
-    fputs("experiment failed: \(error)\n", stderr); exit(1)
+    let stage = (error as? Failure)?.message ?? "unknown"
+    fputs("RESULT rejected stage=\(stage) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=1\n", stderr); exit(1)
 }

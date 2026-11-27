@@ -1,3 +1,7 @@
+/* Experimental host harness: caller owns Server and frees it once. All calls for
+ * one live Server must be serialized on one thread, without reentrancy. Buffers
+ * must be valid for their declared size during the call and may not alias Server.
+ * Never call with a stale handle or after free; C cannot validate pointer lifetime. */
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>

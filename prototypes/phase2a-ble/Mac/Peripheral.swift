@@ -10,8 +10,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
     @Published var events = ""
     private var manager: CBPeripheralManager!
     private var tx: CBMutableCharacteristic?
-    private var pending: [Data] = []
-    private let queueLimit = 16
+    private var queue = PeerQueue(limit: 16)
     private var subscriber: CBCentral?
 
     override init() {
@@ -22,7 +21,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
     func peripheralManagerDidUpdateState(_ peripheral: CBPeripheralManager) {
         guard peripheral.state == .poweredOn else {
             status = "Bluetooth unavailable: \(peripheral.state.rawValue)"
-            pending.removeAll()
+            queue.reset()
             tx = nil
             subscriber = nil
             return
@@ -44,38 +43,42 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         status = error.map { "Advertising error: \($0.localizedDescription)" } ?? "Advertising"
     }
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didSubscribeTo characteristic: CBCharacteristic) {
+        guard characteristic.uuid == txID else { return }
+        guard queue.subscribe(central.identifier) else { log("Additional subscriber ignored"); return }
         subscriber = central
         log("Subscribed; maximum notification: \(central.maximumUpdateValueLength) bytes")
     }
     func peripheralManager(_ peripheral: CBPeripheralManager, central: CBCentral, didUnsubscribeFrom characteristic: CBCharacteristic) {
+        guard characteristic.uuid == txID, subscriber?.identifier == central.identifier else { return }
+        queue.unsubscribe(central.identifier)
         subscriber = nil
-        pending.removeAll()
         log("Unsubscribed; pending notifications cleared")
     }
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
-        for request in requests {
-            guard request.characteristic.uuid == rxID, request.offset == 0, let data = request.value, data.count <= 128 else {
-                peripheral.respond(to: request, withResult: .invalidAttributeValueLength); continue
-            }
-            guard let subscriber, data.count <= subscriber.maximumUpdateValueLength else {
-                peripheral.respond(to: request, withResult: .unlikelyError)
-                log("No subscriber or payload exceeds notification limit"); continue
-            }
-            guard pending.count < queueLimit else {
-                peripheral.respond(to: request, withResult: .insufficientResources)
-                log("Notification queue full"); continue
-            }
-            pending.append(data)
-            peripheral.respond(to: request, withResult: .success)
-            log("Received \(String(decoding: data, as: UTF8.self)); queued \(pending.count)")
-            flush()
+        let writes = requests.map { request in
+            PeerQueue.Write(peer: request.central.identifier,
+                            valid: request.characteristic.uuid == rxID && request.offset == 0 && (request.value?.count ?? 129) <= min(128, subscriber?.maximumUpdateValueLength ?? 0),
+                            data: request.value)
         }
+        let decision = queue.admit(writes)
+        guard let first = requests.first else { return }
+        let result: CBATTError.Code
+        switch decision {
+        case .success: result = .success
+        case .peer: result = .unlikelyError
+        case .invalid: result = .invalidAttributeValueLength
+        case .full: result = .insufficientResources
+        case .empty: return
+        }
+        peripheral.respond(to: first, withResult: result)
+        if decision == .success { flush() }
     }
+
     private func flush() {
-        guard let tx else { return }
-        while let data = pending.first {
-            guard manager.updateValue(data, for: tx, onSubscribedCentrals: subscriber.map { [$0] }) else { log("Notification backpressure; queued \(pending.count)"); return }
-            pending.removeFirst()
+        guard let tx, let subscriber else { return }
+        while let data = queue.pending.first {
+            guard manager.updateValue(data, for: tx, onSubscribedCentrals: [subscriber]) else { log("Notification backpressure; queued \(queue.pending.count)"); return }
+            queue.delivered()
         }
     }
     func peripheralManagerIsReady(toUpdateSubscribers peripheral: CBPeripheralManager) { flush() }

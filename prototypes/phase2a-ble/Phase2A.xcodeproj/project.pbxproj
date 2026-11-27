@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AA0000000000000000000003 /* Lifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000004 /* Lifecycle.swift */; };
+		AA0000000000000000000001 /* PeerQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000002 /* PeerQueue.swift */; };
 		2D1D07B3215037D4585A2B85 /* Central.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F7BC362FBAFBD2FF41EBCD /* Central.swift */; };
 		87B32B140C55179511F8DAAF /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8407CD7A0889E66674DB5508 /* Foundation.framework */; };
 		BD03D2F3ACAAA4611EE87884 /* Peripheral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57902E8A3871DE7BE6D1BCAE /* Peripheral.swift */; };
@@ -14,6 +16,8 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		AA0000000000000000000004 /* Lifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOS/Lifecycle.swift; sourceTree = "<group>"; };
+		AA0000000000000000000002 /* PeerQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mac/PeerQueue.swift; sourceTree = "<group>"; };
 		39F7BC362FBAFBD2FF41EBCD /* Central.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Central.swift; path = iOS/Central.swift; sourceTree = "<group>"; };
 		57902E8A3871DE7BE6D1BCAE /* Peripheral.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Peripheral.swift; path = Mac/Peripheral.swift; sourceTree = "<group>"; };
 		83C2EFA92108EEE33104AB62 /* Peripheral.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Peripheral.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -48,7 +52,9 @@
 				62541232962B8CF0E590AE66 /* Products */,
 				34ACFC3534D51DCE3AEFE27B /* Frameworks */,
 				57902E8A3871DE7BE6D1BCAE /* Peripheral.swift */,
+				AA0000000000000000000002 /* PeerQueue.swift */,
 				39F7BC362FBAFBD2FF41EBCD /* Central.swift */,
+				AA0000000000000000000004 /* Lifecycle.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -175,6 +181,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				2D1D07B3215037D4585A2B85 /* Central.swift in Sources */,
+				AA0000000000000000000003 /* Lifecycle.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -183,6 +190,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				BD03D2F3ACAAA4611EE87884 /* Peripheral.swift in Sources */,
+				AA0000000000000000000001 /* PeerQueue.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

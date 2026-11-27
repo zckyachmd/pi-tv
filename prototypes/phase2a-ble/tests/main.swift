@@ -1,0 +1,25 @@
+import Foundation
+
+let a = UUID(), b = UUID()
+let data = Data([1])
+func write(_ peer: UUID, _ valid: Bool = true) -> PeerQueue.Write { .init(peer: peer, valid: valid, data: data) }
+var q = PeerQueue(limit: 2)
+assert(q.admit([]) == .empty)
+assert(q.subscribe(a))
+assert(!q.subscribe(b))
+assert(q.admit([write(b)]) == .peer && q.pending.isEmpty)
+assert(q.admit([write(a), write(a, false)]) == .invalid && q.pending.isEmpty)
+assert(q.admit([write(a), write(a)]) == .success && q.pending.count == 2)
+assert(q.admit([write(a)]) == .full && q.pending.count == 2)
+// A failed notification leaves the head untouched until delivery succeeds.
+assert(q.pending.first == data && q.pending.count == 2)
+q.unsubscribe(b)
+assert(q.peer == a && q.pending.count == 2)
+q.delivered()
+assert(q.pending.count == 1)
+q.unsubscribe(a)
+assert(q.peer == nil && q.pending.isEmpty)
+assert(q.subscribe(b) && q.pending.isEmpty)
+q.reset()
+assert(q.peer == nil && q.pending.isEmpty)
+print("PeerQueue regression tests passed")

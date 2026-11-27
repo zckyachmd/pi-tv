@@ -1,0 +1,118 @@
+phase2b-replacement-admission v0.1.0 (/Users/zckyachmd/Developer/pi-tv/prototypes/phase2b-tls/replacement)
+├── rustls feature "ring"
+│   ├── rustls v0.23.46
+│   │   ├── subtle v2.6.1
+│   │   ├── once_cell feature "alloc"
+│   │   │   ├── once_cell v1.21.4
+│   │   │   └── once_cell feature "race"
+│   │   │       └── once_cell v1.21.4
+│   │   ├── once_cell feature "race" (*)
+│   │   ├── ring feature "default"
+│   │   │   ├── ring v0.17.14
+│   │   │   │   ├── cfg-if v1.0.5
+│   │   │   │   ├── libc v0.2.191
+│   │   │   │   ├── getrandom feature "default"
+│   │   │   │   │   └── getrandom v0.2.17
+│   │   │   │   │       ├── libc v0.2.191
+│   │   │   │   │       └── cfg-if feature "default"
+│   │   │   │   │           └── cfg-if v1.0.5
+│   │   │   │   └── untrusted feature "default"
+│   │   │   │       └── untrusted v0.9.0
+│   │   │   │   [build-dependencies]
+│   │   │   │   └── cc v1.12.0
+│   │   │   │       ├── find-msvc-tools feature "default"
+│   │   │   │       │   └── find-msvc-tools v0.1.16
+│   │   │   │       └── shlex feature "default"
+│   │   │   │           ├── shlex v2.0.1
+│   │   │   │           └── shlex feature "std"
+│   │   │   │               └── shlex v2.0.1
+│   │   │   ├── ring feature "alloc"
+│   │   │   │   └── ring v0.17.14 (*)
+│   │   │   └── ring feature "dev_urandom_fallback"
+│   │   │       └── ring v0.17.14 (*)
+│   │   ├── rustls-pki-types feature "alloc"
+│   │   │   └── rustls-pki-types v1.16.0
+│   │   │       └── zeroize feature "default"
+│   │   │           ├── zeroize v1.9.2
+│   │   │           └── zeroize feature "alloc"
+│   │   │               └── zeroize v1.9.2
+│   │   ├── rustls-pki-types feature "default"
+│   │   │   ├── rustls-pki-types v1.16.0 (*)
+│   │   │   └── rustls-pki-types feature "alloc" (*)
+│   │   ├── zeroize feature "default" (*)
+│   │   └── rustls-webpki feature "alloc"
+│   │       ├── rustls-webpki v0.103.17
+│   │       │   ├── ring v0.17.14 (*)
+│   │       │   ├── rustls-pki-types v1.16.0 (*)
+│   │       │   └── untrusted feature "default" (*)
+│   │       ├── ring feature "alloc" (*)
+│   │       └── rustls-pki-types feature "alloc" (*)
+│   └── rustls-webpki feature "ring"
+│       └── rustls-webpki v0.103.17 (*)
+├── rustls feature "std"
+│   ├── rustls v0.23.46 (*)
+│   ├── once_cell feature "std"
+│   │   ├── once_cell v1.21.4
+│   │   └── once_cell feature "alloc" (*)
+│   ├── rustls-pki-types feature "std"
+│   │   ├── rustls-pki-types v1.16.0 (*)
+│   │   └── rustls-pki-types feature "alloc" (*)
+│   └── rustls-webpki feature "std"
+│       ├── rustls-webpki v0.103.17 (*)
+│       ├── rustls-pki-types feature "std" (*)
+│       └── rustls-webpki feature "alloc" (*)
+└── rustls-ffi feature "ring"
+    ├── rustls-ffi v0.15.7 (https://github.com/rustls/rustls-ffi?rev=8f0eadf96fa21ade96d867c7ea06f8f5fddda856#8f0eadf9)
+    │   ├── rustls feature "std" (*)
+    │   ├── rustls feature "tls12"
+    │   │   └── rustls v0.23.46 (*)
+    │   ├── libc feature "default"
+    │   │   ├── libc v0.2.191
+    │   │   └── libc feature "std"
+    │   │       └── libc v0.2.191
+    │   ├── rustls-webpki feature "std" (*)
+    │   ├── log feature "default"
+    │   │   └── log v0.4.35
+    │   ├── macro_rules_attribute feature "default"
+    │   │   └── macro_rules_attribute v0.2.3
+    │   │       ├── macro_rules_attribute-proc_macro feature "default"
+    │   │       │   └── macro_rules_attribute-proc_macro v0.2.3 (proc-macro)
+    │   │       └── pastey feature "default"
+    │   │           └── pastey v0.2.3 (proc-macro)
+    │   └── rustls-platform-verifier feature "default"
+    │       └── rustls-platform-verifier v0.7.1
+    │           ├── rustls feature "std" (*)
+    │           ├── log feature "default" (*)
+    │           ├── core-foundation feature "default"
+    │           │   ├── core-foundation v0.10.1
+    │           │   │   ├── core-foundation-sys v0.8.7
+    │           │   │   └── libc feature "default" (*)
+    │           │   └── core-foundation feature "link"
+    │           │       ├── core-foundation v0.10.1 (*)
+    │           │       └── core-foundation-sys feature "link"
+    │           │           └── core-foundation-sys v0.8.7
+    │           ├── core-foundation-sys feature "default"
+    │           │   ├── core-foundation-sys v0.8.7
+    │           │   └── core-foundation-sys feature "link" (*)
+    │           ├── security-framework feature "default"
+    │           │   ├── security-framework v3.7.0
+    │           │   │   ├── security-framework-sys v2.17.0
+    │           │   │   │   ├── libc feature "default" (*)
+    │           │   │   │   └── core-foundation-sys feature "default" (*)
+    │           │   │   ├── libc feature "default" (*)
+    │           │   │   ├── core-foundation feature "default" (*)
+    │           │   │   ├── core-foundation-sys feature "default" (*)
+    │           │   │   └── bitflags feature "default"
+    │           │   │       └── bitflags v2.13.2
+    │           │   ├── security-framework feature "OSX_10_14"
+    │           │   │   └── security-framework v3.7.0 (*)
+    │           │   ├── security-framework feature "alpn"
+    │           │   │   └── security-framework v3.7.0 (*)
+    │           │   └── security-framework feature "session-tickets"
+    │           │       └── security-framework v3.7.0 (*)
+    │           └── security-framework-sys feature "default"
+    │               ├── security-framework-sys v2.17.0 (*)
+    │               └── security-framework-sys feature "OSX_10_13"
+    │                   └── security-framework-sys v2.17.0 (*)
+    ├── rustls feature "ring" (*)
+    └── rustls-webpki feature "ring" (*)

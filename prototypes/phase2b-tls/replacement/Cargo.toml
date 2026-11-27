@@ -1,0 +1,12 @@
+[package]
+name = "phase2b-replacement-admission"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rustls-ffi = { git = "https://github.com/rustls/rustls-ffi", rev = "8f0eadf96fa21ade96d867c7ea06f8f5fddda856", default-features = false, features = ["ring"] }
+rustls = { version = "=0.23.46", default-features = false, features = ["std", "ring"] }
+
+[lib]
+crate-type = ["staticlib"]

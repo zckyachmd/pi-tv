@@ -1,0 +1,4 @@
+module CRustls {
+    header "rustls.h"
+    export *
+}

@@ -45,7 +45,7 @@ The earlier summary table is supplemented by this explicit crosswalk. “Retaine
 | §9 engineering governance | Retained dependency and test governance; detailed CI policy deferred | [R-22](../../PRD.md); [boundaries](MODULE_BOUNDARIES.md) |
 | §§10–13 phases and evidence | Historical sequence superseded by current owner gates; observations preserved, no prototype implies target validation | [R-11–R-14](../../PRD.md); [risk register](RISK_REGISTER.md) |
 
-The handoff BLE, application, operations, security and licensing proposals map to R-01–R-25. Handoff design-system detail is deferred to Session 1C.2; its accessibility and localization outcomes remain R-19. Hardware and physical-phone gates in the handoff roadmap remain unexecuted.
+The handoff BLE, application, operations, security and licensing proposals map to R-01–R-25. Design-system planning is integrated; [active v2 wireframes](../design/wireframes/v2/README.md) supersede handoff visuals, and accessibility/localization outcomes remain R-19. Physical validation remains pending. Hardware and physical-phone gates in the handoff roadmap remain unexecuted.
 
 ## Owner-directed keyboard-free reconciliation
 

@@ -19,7 +19,7 @@ Arrows select visible enabled candidates whose centers lie in the requested half
 | TV-07 | Initial focus first enabled settings row. Up/down traverses enabled rows; device management → TV-06, diagnostics → TV-08, reset → confirmation modal. Back → TV-02 and restores invoking action. |
 | TV-08 | Initial focus first enabled recovery action, otherwise Back. Up/down traverses actions; recovery → TV-10; Back restores the originating TV-07 or TV-10 screen and its invoking focus. |
 | TV-09 | Initial focus Back, or Retry if it is the sole non-destructive enabled action. Up/down moves between actions; Back → TV-02, restoring tile. |
-| TV-10 | Initial focus Home when enabled, otherwise first approved local recovery action. Up/down moves through enabled actions; Home → TV-02; Diagnostics → TV-08; recovery guidance → authenticated phone or independent recovery proof; safe Retry → TV-03. |
+| TV-10 | Initial focus Home when enabled, otherwise first authorized recovery action; display-only guidance if no authenticated input exists. Up/down moves through enabled actions; Home → TV-02; Diagnostics → TV-08; recovery guidance → authenticated phone or independent recovery proof; safe Retry → TV-03. |
 
 A modal captures all directional and activation events; directional edges stay inside it. Back cancels only when safe. On dismissal restore the invoking control if visible and enabled; otherwise nearest enabled sibling, then a focusable page heading or page-level action. During reset or an irreversible commit, Back is disabled if cancellation cannot safely be honored and the state is explained.
 

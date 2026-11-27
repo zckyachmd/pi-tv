@@ -1,0 +1,41 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+
+		A10000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = { BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 2720; };
+			buildConfigurationList = A10000000000000000000002;
+			compatibilityVersion = "Xcode 14.0";
+			mainGroup = A10000000000000000000003;
+			productRefGroup = A10000000000000000000004;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A10000000000000000000005 /* HostFirstRemote */);
+		};
+		A10000000000000000000002 = { isa = XCConfigurationList; buildConfigurations = (A10000000000000000000010, A10000000000000000000011); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000003 = { isa = PBXGroup; children = (A10000000000000000000006, A10000000000000000000007, A10000000000000000000008, A10000000000000000000009); sourceTree = "<group>"; };
+		A10000000000000000000004 = { isa = PBXGroup; children = (A10000000000000000000012); name = Products; sourceTree = "<group>"; };
+		A10000000000000000000005 = { isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000013; buildPhases = (A10000000000000000000014, A10000000000000000000015, A10000000000000000000016); buildRules = (); dependencies = (); name = HostFirstRemote; productName = HostFirstRemote; productReference = A10000000000000000000012; productType = "com.apple.product-type.application"; };
+		A10000000000000000000006 /* App.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ios-app/App.swift; sourceTree = "<group>"; };
+		A10000000000000000000007 /* Remote.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ios-swift/Sources/HostFirstRemote/Remote.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 /* RemoteView.swift */ = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ios-swift/Sources/HostFirstRemote/RemoteView.swift; sourceTree = "<group>"; };
+		A10000000000000000000009 /* Info.plist */ = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = ios-app/Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000010 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; }; name = Debug; };
+		A10000000000000000000011 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { ALWAYS_SEARCH_USER_PATHS = NO; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; }; name = Release; };
+		A10000000000000000000012 /* HostFirstRemote.app */ = { isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HostFirstRemote.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000013 = { isa = XCConfigurationList; buildConfigurations = (A10000000000000000000017, A10000000000000000000018); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000014 /* Sources */ = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000019, A10000000000000000000020, A10000000000000000000021); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000015 /* Frameworks */ = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000016 /* Resources */ = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000017 /* Debug */ = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = ios-app/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = dev.pitv.phase0b.hostfirst; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Debug; };
+		A10000000000000000000018 /* Release */ = { isa = XCBuildConfiguration; buildSettings = { CODE_SIGNING_ALLOWED = NO; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = ios-app/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; PRODUCT_BUNDLE_IDENTIFIER = dev.pitv.phase0b.hostfirst; PRODUCT_NAME = "$(TARGET_NAME)"; SDKROOT = iphoneos; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_VERSION = 6.0; TARGETED_DEVICE_FAMILY = 1; }; name = Release; };
+		A10000000000000000000019 /* App.swift in Sources */ = { isa = PBXBuildFile; fileRef = A10000000000000000000006; };
+		A10000000000000000000020 /* Remote.swift in Sources */ = { isa = PBXBuildFile; fileRef = A10000000000000000000007; };
+		A10000000000000000000021 /* RemoteView.swift in Sources */ = { isa = PBXBuildFile; fileRef = A10000000000000000000008; };
+	};
+	rootObject = A10000000000000000000001;
+}

@@ -1,0 +1,18 @@
+# Rust build outputs
+/target/
+**/target/
+
+# Swift Package Manager and Xcode user/build state
+**/.build/
+**/DerivedData/
+**/xcuserdata/
+*.xcuserstate
+
+# macOS and disposable runtime state
+.DS_Store
+**/.pitv-host-first-profile/
+
+# Reproducible binaries are represented by checked build logs and SHA-256 metadata
+/evidence/phase0b/arm64-build/artifacts/*
+/evidence/phase0b/host-first/arm64-artifacts/pitv-host-first
+/evidence/phase0b/package-sim/*.deb

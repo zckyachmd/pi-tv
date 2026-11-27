@@ -1,0 +1,113 @@
+{
+  "timestamp_utc": "2026-11-27T07:33:54.265Z",
+  "duration_seconds": 10.59,
+  "environment": {
+    "macOS": "27.2.1",
+    "architecture": "arm64",
+    "chrome": "158.0.8127.37",
+    "profile": "fresh temporary directory"
+  },
+  "command": "node scripts/phase0b/chrome-runtime-smoke.mjs",
+  "result": "VERIFIED",
+  "limitations": [
+    "No provider login or playback attempted; public landing-page navigation only.",
+    "Fullscreen observation is local macOS behavior, not HDMI/display-mode evidence.",
+    "Media Session keyboard event tests browser control capability only, not provider playback controls.",
+    "Session persistence and relaunch recovery use a temporary profile and do not establish product daemon recovery."
+  ],
+  "checks": {
+    "startup": {
+      "status": "VERIFIED",
+      "targetCount": 1,
+      "startupMs": 2363
+    },
+    "devtools": {
+      "status": "VERIFIED",
+      "address": "127.0.0.1",
+      "transport": "private loopback WebSocket",
+      "pageTargets": 1
+    },
+    "dpad": {
+      "status": "VERIFIED",
+      "before": "generic",
+      "after": "youtube"
+    },
+    "textInput": {
+      "status": "VERIFIED"
+    },
+    "pointer": {
+      "status": "VERIFIED"
+    },
+    "scroll": {
+      "status": "VERIFIED",
+      "top": 120,
+      "height": 728,
+      "wheel": 120
+    },
+    "fullscreen": {
+      "status": "VERIFIED",
+      "kioskWindow": true
+    },
+    "mediaKey": {
+      "status": "NOT_VERIFIED",
+      "mechanism": "generic Media Session action handler"
+    },
+    "providerNavigation": {
+      "generic": {
+        "loaded": true,
+        "titlePresent": true,
+        "responseStatus": 200
+      },
+      "youtube": {
+        "loaded": true,
+        "titlePresent": true,
+        "responseStatus": 200
+      },
+      "netflix": {
+        "loaded": true,
+        "titlePresent": true,
+        "responseStatus": 200
+      },
+      "spotify": {
+        "loaded": true,
+        "titlePresent": true,
+        "responseStatus": 200
+      }
+    },
+    "genericMedia": {
+      "silentSample": true,
+      "playPause": {
+        "status": "VERIFIED",
+        "playback": {
+          "paused": false,
+          "time": 0.267188
+        }
+      },
+      "seek": {
+        "status": "NOT_VERIFIED",
+        "requestedSeconds": 0.5,
+        "observedSeconds": 0
+      }
+    },
+    "singleForegroundPage": {
+      "status": "VERIFIED",
+      "pageTargets": 1
+    },
+    "sessionPersistence": {
+      "status": "VERIFIED",
+      "scope": "fresh temporary Chrome profile"
+    },
+    "crashRelaunch": {
+      "status": "VERIFIED",
+      "recoveryMs": 1791,
+      "sameTemporaryProfile": true
+    },
+    "sessionAfterRelaunch": {
+      "status": "VERIFIED"
+    },
+    "termination": {
+      "status": "VERIFIED",
+      "isolatedProcessGroup": true
+    }
+  }
+}

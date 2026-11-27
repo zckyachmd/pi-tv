@@ -1,0 +1,21 @@
+{
+  "timestamp_utc": "2026-11-27T07:25:34Z",
+  "environment": "macOS 27.2.1 arm64; Google Chrome 158.0.8127.37; daemon bound to IPv4 loopback",
+  "command": "PITV_PORT=18765 PITV_PROFILE_DIR=<temporary> CHROME_BIN=<installed Chrome> prototypes/host-first/daemon/target/debug/pitv-host-first; local HTTP checks; Ctrl-C shutdown",
+  "duration_seconds": 12,
+  "result": "VERIFIED",
+  "checks": {
+    "health_and_manifest": "PASS",
+    "capabilities": {"runtime": "macos-chrome", "browser": true, "fullscreen": true, "remote_debugging": false},
+    "cross_origin_command": "403 Forbidden",
+    "launch_demo": "accepted",
+    "return_home": "accepted",
+    "stop_runtime": "accepted",
+    "shutdown_and_profile_cleanup": "PASS"
+  },
+  "limitations": [
+    "The first startup attempt exposed a manifest description parsing mismatch; optional description parsing was corrected and the rerun passed.",
+    "HTTP launch/home/stop was exercised against local Chrome; browser behavior checks are separately recorded in browser/runtime-smoke.json.",
+    "No LAN authentication, TLS server identity, physical phone, Pi, or production service integration was tested."
+  ]
+}

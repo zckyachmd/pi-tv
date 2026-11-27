@@ -1,0 +1,36 @@
+timestamp_utc=2026-11-27T06:43:39Z
+builder_image=rust:1.100.0-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126
+rustc 1.100.0 (0ef1bc386 2026-11-09)
+binary: rustc
+commit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a
+commit-date: 2026-11-09
+host: aarch64-unknown-linux-gnu
+release: 1.100.0
+LLVM version: 23.1.5
+debian=12 bookworm
+libc=glibc 2.36
+   Compiling phase0b-rust-smoke v0.1.0 (/src)
+    Finished `release` profile [optimized] target(s) in 0.61s
+ELF header
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           AArch64
+ELF interpreter and dynamic dependencies
+      [Requesting program interpreter: /lib/ld-linux-aarch64.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+	linux-vdso.so.1 (0x0000ffffa02ec000)
+	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffffa0200000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffffa0050000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffffa02b0000)
+GLIBC symbol requirements
+GLIBC_2.17
+GLIBC_2.18
+GLIBC_2.28
+GLIBC_2.30
+GLIBC_2.32
+GLIBC_2.33
+GLIBC_2.34
+smoke output
+phase0b-arm64-smoke

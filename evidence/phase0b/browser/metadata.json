@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-11-27T07:33:54Z",
+  "environment": "macOS 27.2.1 arm64; Google Chrome 158.0.8127.37; isolated temporary profile",
+  "command": "node scripts/phase0b/chrome-runtime-smoke.mjs",
+  "duration_seconds": 10.59,
+  "result": "VERIFIED",
+  "limitations": [
+    "Public landing pages only; no sign-in or provider playback.",
+    "Fullscreen API and generic media play/pause passed; media key and seek remained unverified.",
+    "The browser test is a macOS interaction check, not HDMI, Linux, DRM, or Raspberry Pi evidence."
+  ]
+}

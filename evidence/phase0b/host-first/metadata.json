@@ -1,0 +1,8 @@
+{
+  "timestamp_utc": "2026-11-27T07:36:51Z",
+  "environment": "Apple Silicon macOS 27.2.1 and digest-pinned Debian 12 ARM64; Rust 1.100.0; Chrome 158.0.8127.37",
+  "command": "See child run records for exact sanitized commands.",
+  "duration_seconds": 21,
+  "result": "VERIFIED",
+  "limitations": ["Local host prototype only; no Pi execution, LAN pairing, TLS server identity, provider playback, or production lifecycle guarantees."]
+}

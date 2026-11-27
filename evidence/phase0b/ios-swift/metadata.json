@@ -1,0 +1,11 @@
+{
+  "timestamp_utc": "2026-11-27T07:32:00Z",
+  "environment": "Xcode 27.2; iOS Simulator SDK 27.2; Swift 6.4.2; arm64 iOS Simulator target",
+  "command": "IOS_SDK=\"$(xcrun --sdk iphonesimulator --show-sdk-path)\" swift build --package-path prototypes/host-first/ios-swift --triple arm64-apple-ios27.2-simulator --sdk \"$IOS_SDK\"",
+  "duration_seconds": 3.89,
+  "result": "VERIFIED",
+  "limitations": [
+    "Library compilation only; no simulator app was launched.",
+    "Bonjour permission, QR scanning, TLS wrong-identity rejection, pairing server interoperability, and physical iPhone behavior were not run."
+  ]
+}

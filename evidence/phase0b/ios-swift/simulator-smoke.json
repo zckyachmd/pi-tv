@@ -1,0 +1,17 @@
+{
+  "timestamp_utc": "2026-11-27T07:50:55Z",
+  "environment": "Xcode 27.2; iOS Simulator 27.2; Apple Silicon macOS",
+  "command": "python3 scripts/phase0b/ios-simulator-smoke.py",
+  "duration_seconds": 57.76,
+  "result": "BLOCKED",
+  "simulator_model": "iPhone 18 Pro",
+  "checks": {
+    "build": "PASS",
+    "timeout": "install",
+    "terminate_cleanup": "TIMEOUT",
+    "shutdown_cleanup": "PASS"
+  },
+  "limitations": [
+    "This is a SwiftUI shell launch test; Bonjour permission UX, pairing, WSS, QR scanning, and phone hardware were not exercised."
+  ]
+}

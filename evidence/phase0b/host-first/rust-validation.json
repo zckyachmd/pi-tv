@@ -1,0 +1,9 @@
+{
+  "timestamp_utc": "2026-11-27T07:25:00Z",
+  "environment": "macOS 27.2.1 arm64; rustup Rust 1.100.0 pinned by repository rust-toolchain.toml",
+  "command": "zsh -lc 'cargo fmt --manifest-path prototypes/host-first/daemon/Cargo.toml && cargo build --manifest-path prototypes/host-first/daemon/Cargo.toml --locked --offline && cargo test --manifest-path prototypes/host-first/daemon/Cargo.toml --locked --offline && cargo clippy --manifest-path prototypes/host-first/daemon/Cargo.toml --locked --offline -- -D warnings'",
+  "duration_seconds": 7,
+  "result": "VERIFIED",
+  "checks": {"build": "PASS", "tests": "2 passed", "clippy": "PASS, warnings denied"},
+  "limitations": ["This build is a macOS host executable, not an ARM64 Linux daemon build or target runtime test."]
+}

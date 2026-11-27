@@ -1,0 +1,10 @@
+{
+  "timestamp_utc": "2026-11-27T07:54:31Z",
+  "environment": "Digest-pinned Debian 12 ARM64 Rust builder with offline Cargo registry cache",
+  "command": "scripts/phase0b/build-host-first-arm64.sh",
+  "duration_seconds": 30,
+  "result": "VERIFIED",
+  "artifact_sha256": "c4bb2c22794c0c5ed62d767acb1267f38f2df264f1bf3e99c4d4a7e4de3c6305",
+  "builder_image": "rust:1.100.0-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126",
+  "limitations": ["Build and ELF inspection only; executable was not run on the Pi.", "This does not verify the target image's installed glibc or runtime dependencies."]
+}

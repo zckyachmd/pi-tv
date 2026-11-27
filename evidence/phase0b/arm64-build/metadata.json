@@ -1,0 +1,10 @@
+{
+  "timestamp_utc": "2026-11-27T06:43:40Z",
+  "environment": "Apple Silicon; Docker Linux ARM64 VM; Debian 12 bookworm; Rust 1.100.0; glibc 2.36",
+  "command": "scripts/phase0b/build-arm64-smoke.sh",
+  "duration_seconds": 1,
+  "result": "VERIFIED",
+  "artifact_sha256": "8a906dc228d5ac393b1a7fc727f1568e99c85432b7f2c6af1d8283af06b852d7",
+  "builder_image": "rust:1.100.0-slim-bookworm@sha256:bb875b0f8ce726053e259034848c471840e96bfe591fd52556178ae9a05e6126",
+  "limitations": ["Disposable hello-world only; no product native dependencies.", "No execution on the Raspberry Pi; no runtime compatibility claim."]
+}

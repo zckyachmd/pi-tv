@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pi TV Host Feasibility</title>
+  <style>
+    :root { color-scheme: dark; font: 20px/1.45 system-ui, sans-serif; background: #11131a; color: #f4f5f7; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 5vh 5vw; background: #11131a; }
+    header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 8vh; }
+    h1 { margin: 0; font-size: clamp(36px, 6vw, 68px); letter-spacing: -.04em; }
+    p { margin: 8px 0 0; color: #b3bdca; }
+    .hint { font-size: 16px; text-align: right; }
+    .apps { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 20px; max-width: 1300px; }
+    button { border: 2px solid #414a57; border-radius: 18px; min-height: 180px; padding: 24px; color: inherit; background: #202630; text-align: left; font: inherit; cursor: pointer; transition: transform .12s ease, border-color .12s ease, background .12s ease; }
+    button:focus-visible, button[data-focused="true"] { outline: 4px solid #9ed0ff; outline-offset: 5px; border-color: #9ed0ff; background: #2a394b; transform: scale(1.035); }
+    button strong { display: block; font-size: 27px; }
+    button small { display: block; margin-top: 12px; color: #b3bdca; }
+    #notice { min-height: 32px; margin-top: 28px; color: #9ed0ff; }
+    .test-area { margin-top: 32px; max-width: 600px; }
+    .test-area label { display: block; margin-bottom: 8px; }
+    input { width: min(100%, 440px); padding: 12px; border: 2px solid #5f6d7d; border-radius: 8px; background: #0a0c10; color: white; font: inherit; }
+    #scroll-area { height: 150px; overflow: auto; margin-top: 20px; padding: 14px; border: 1px solid #414a57; border-radius: 8px; }
+    #scroll-content { height: 700px; background: linear-gradient(#202630, #49617a); }
+    @media (max-width: 760px) { .apps { grid-template-columns: repeat(2, minmax(130px, 1fr)); } header { align-items: start; flex-direction: column; } .hint { text-align: left; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div><h1>Pi TV</h1><p>Host-first runtime feasibility</p></div>
+    <p class="hint">Arrow keys to focus · Enter to open · F for fullscreen</p>
+  </header>
+  <main>
+    <section class="apps" aria-label="Applications">
+    </section>
+    <div id="notice" aria-live="polite">Loading application manifest…</div>
+    <section class="test-area" aria-label="Input and scrolling test">
+      <label for="text-test">Keyboard text input test</label>
+      <input id="text-test" autocomplete="off" placeholder="Type here with the remote">
+      <button id="click-test" type="button" style="min-height:48px;margin-top:12px">Pointer test</button>
+      <p id="click-count">Pointer clicks: 0</p>
+      <div id="scroll-area" tabindex="0" aria-label="Scroll test area"><div id="scroll-content">Scroll this area to test the generic wheel command.</div></div>
+    </section>
+  </main>
+  <script>
+    const appGrid = document.querySelector(".apps");
+    let cards = [];
+    let index = 0;
+    function focusCard(next) {
+      if (!cards.length) return;
+      index = (next + cards.length) % cards.length;
+      cards.forEach((card, i) => card.dataset.focused = String(i === index));
+      cards[index].focus();
+    }
+    async function launch(id) {
+      const response = await fetch("/api/v1/commands", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "launch", app_id: id }) });
+      if (!response.ok) document.querySelector("#notice").textContent = `Could not open ${id}. Return home and retry.`;
+    }
+    async function loadApps() {
+      try {
+        const apps = await fetch("/api/v1/apps").then((response) => { if (!response.ok) throw new Error("manifest unavailable"); return response.json(); });
+        appGrid.replaceChildren(...apps.map((app) => {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.dataset.app = app.id;
+          const name = document.createElement("strong"); name.textContent = app.name;
+          const hint = document.createElement("small"); hint.textContent = app.description ?? "Select to open";
+          button.append(name, hint);
+          button.addEventListener("focus", () => { index = cards.indexOf(button); });
+          button.addEventListener("click", () => launch(app.id));
+          return button;
+        }));
+        cards = [...appGrid.querySelectorAll("[data-app]")];
+        document.querySelector("#notice").textContent = "One browser tab, one foreground app.";
+        focusCard(0);
+      } catch {
+        document.querySelector("#notice").textContent = "Application list unavailable. Check the local daemon.";
+      }
+    }
+    addEventListener("keydown", (event) => {
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") { event.preventDefault(); focusCard(index + 1); }
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") { event.preventDefault(); focusCard(index - 1); }
+      if (event.key.toLowerCase() === "f") document.documentElement.requestFullscreen?.();
+      if (event.key === "Escape" && document.fullscreenElement) document.exitFullscreen?.();
+      if (event.key === "Enter" && cards.length) { event.preventDefault(); cards[index].click(); }
+    });
+    let clicks = 0;
+    document.querySelector("#click-test").addEventListener("click", () => {
+      document.querySelector("#click-count").textContent = `Pointer clicks: ${++clicks}`;
+    });
+    window.phase0bWheelDelta = 0;
+    document.querySelector("#scroll-area").addEventListener("wheel", (event) => { window.phase0bWheelDelta = event.deltaY; }, { passive: true });
+    window.phase0bMediaState = "paused";
+    if (navigator.mediaSession) {
+      navigator.mediaSession.setActionHandler("play", () => { window.phase0bMediaState = "playing"; navigator.mediaSession.playbackState = "playing"; });
+      navigator.mediaSession.setActionHandler("pause", () => { window.phase0bMediaState = "paused"; navigator.mediaSession.playbackState = "paused"; });
+    }
+    try { localStorage.setItem("phase0b-profile-marker", "persisted"); } catch {}
+    loadApps();
+  </script>
+</body>
+</html>

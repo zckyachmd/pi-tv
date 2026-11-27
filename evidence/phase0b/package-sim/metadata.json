@@ -1,0 +1,10 @@
+{
+  "timestamp_utc": "2026-11-27T07:17:26Z",
+  "environment": "Debian 12 bookworm arm64 in digest-pinned Rust 1.100.0 container",
+  "command": "scripts/phase0b/package-feasibility.sh",
+  "duration_seconds": 110,
+  "result": "VERIFIED",
+  "smoke_deb_sha256": "758fe44dad1c6fa4c8731f3e0641858a2b2774fd70d7a548767000a65d277e79",
+  "package_install_performed": false,
+  "limitations": ["APT simulations use Debian bookworm repositories, not the Raspberry Pi OS image's configured repositories.", "The Chromium plus Cage plan and PipeWire variant succeeded, but the labwc plan was unavailable because Debian 12 bookworm had no labwc package candidate.", "The bookworm repositories returned no Widevine package candidate; this does not determine availability through other legitimate licensing/distribution channels.", "The smoke package is not a product package and does not test service scripts, upgrade, removal, or target runtime."]
+}

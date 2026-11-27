@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Generic Demo</title></head>
+<body style="font:24px system-ui;max-width:900px;margin:10vh auto;padding:24px">
+  <h1>Generic web application</h1>
+  <p>This page contains no provider-specific logic.</p>
+  <button id="play-media" type="button" onclick="document.querySelector('audio').play(); mediaSessionState('playing')">Play silent sample</button>
+  <button id="pause-media" type="button" onclick="document.querySelector('audio').pause(); mediaSessionState('paused')">Pause sample</button>
+  <audio controls style="display:block;margin-top:24px" src="/silence.wav"></audio>
+  <script>
+    function mediaSessionState(state) {
+      if (navigator.mediaSession) navigator.mediaSession.playbackState = state;
+    }
+    if (navigator.mediaSession) {
+      navigator.mediaSession.setActionHandler("play", () => { document.querySelector("audio").play(); mediaSessionState("playing"); });
+      navigator.mediaSession.setActionHandler("pause", () => { document.querySelector("audio").pause(); mediaSessionState("paused"); });
+    }
+  </script>
+</body>
+</html>

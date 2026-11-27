@@ -1,0 +1,111 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling libc v0.2.191
+   Compiling syn v3.0.10
+   Compiling itoa v1.0.19
+   Compiling bytes v1.12.2
+   Compiling version_check v0.9.5
+   Compiling pin-project-lite v0.2.18
+   Compiling cfg-if v1.0.5
+   Compiling generic-array v0.14.7
+   Compiling serde_core v1.0.229
+   Compiling http v1.5.0
+   Compiling futures-core v0.3.34
+   Compiling log v0.4.35
+   Compiling getrandom v0.3.4
+   Compiling once_cell v1.21.4
+   Compiling typenum v1.20.1
+   Compiling zerocopy v0.8.66
+   Compiling tracing-core v0.1.36
+   Compiling errno v0.3.15
+   Compiling httparse v1.10.1
+   Compiling signal-hook-registry v1.4.8
+   Compiling tokio-macros v2.7.2
+   Compiling socket2 v0.6.5
+   Compiling mio v1.2.5
+   Compiling serde v1.0.229
+   Compiling tokio v1.54.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_core v0.9.5
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling serde_derive v1.0.229
+   Compiling http-body v1.1.0
+   Compiling syn v2.0.119
+   Compiling zmij v1.0.23
+   Compiling thiserror v2.0.21
+   Compiling tracing-attributes v0.1.31
+   Compiling digest v0.10.7
+   Compiling rand_chacha v0.9.0
+   Compiling thiserror-impl v2.0.21
+   Compiling cpufeatures v0.2.17
+   Compiling futures-sink v0.3.34
+   Compiling serde_json v1.0.154
+   Compiling futures-task v0.3.34
+   Compiling slab v0.4.12
+   Compiling smallvec v1.16.6
+   Compiling tower-service v0.3.3
+   Compiling futures-util v0.3.34
+   Compiling sha1 v0.10.7
+   Compiling rand v0.9.5
+   Compiling tracing v0.1.44
+   Compiling data-encoding v2.11.1
+   Compiling httpdate v1.0.3
+   Compiling tower-layer v0.3.3
+   Compiling percent-encoding v2.3.2
+   Compiling atomic-waker v1.1.2
+   Compiling memchr v2.8.3
+   Compiling sync_wrapper v1.0.2
+   Compiling hyper v1.13.0
+   Compiling form_urlencoded v1.2.3
+   Compiling tungstenite v0.29.0
+   Compiling http-body-util v0.1.5
+   Compiling ryu v1.0.23
+   Compiling lazy_static v1.5.1
+   Compiling mime v0.3.18
+   Compiling axum-core v0.5.6
+   Compiling sharded-slab v0.1.7
+   Compiling serde_urlencoded v0.7.1
+   Compiling tokio-tungstenite v0.29.0
+   Compiling hyper-util v0.1.21
+   Compiling tower v0.5.3
+   Compiling tracing-serde v0.2.0
+   Compiling serde_path_to_error v0.1.20
+   Compiling tracing-log v0.2.0
+   Compiling thread_local v1.1.10
+   Compiling nu-ansi-term v0.50.3
+   Compiling base64 v0.22.1
+   Compiling matchit v0.8.4
+   Compiling tracing-subscriber v0.3.23
+   Compiling axum v0.8.9
+   Compiling pitv-host-first v0.1.0 (/src/daemon)
+    Finished `release` profile [optimized] target(s) in 27.43s
+architecture=arm64
+glibc=glibc 2.36
+ELF header
+  Class:                             ELF64
+  Data:                              2's complement, little endian
+  Type:                              DYN (Position-Independent Executable file)
+  Machine:                           AArch64
+ELF interpreter and dynamic dependencies
+      [Requesting program interpreter: /lib/ld-linux-aarch64.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libgcc_s.so.1]
+ 0x0000000000000001 (NEEDED)             Shared library: [libm.so.6]
+ 0x0000000000000001 (NEEDED)             Shared library: [libc.so.6]
+resolved dynamic dependencies in build environment
+	linux-vdso.so.1 (0x0000ffffab839000)
+	libgcc_s.so.1 => /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffffab5b0000)
+	libm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ffffab500000)
+	libc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffffab350000)
+	/lib/ld-linux-aarch64.so.1 (0x0000ffffab7f0000)
+GLIBC symbol requirements
+GLIBC_2.17
+GLIBC_2.18
+GLIBC_2.25
+GLIBC_2.28
+GLIBC_2.29
+GLIBC_2.30
+GLIBC_2.32
+GLIBC_2.33
+GLIBC_2.34

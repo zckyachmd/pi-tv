@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "home": "http://127.0.0.1:8765/",
+  "apps": [
+    { "id": "generic", "name": "Demo", "url": "/demo.html" },
+    { "id": "youtube", "name": "YouTube", "url": "https://www.youtube.com/" },
+    { "id": "netflix", "name": "Netflix", "url": "https://www.netflix.com/" },
+    { "id": "spotify", "name": "Spotify", "url": "https://open.spotify.com/" }
+  ]
+}

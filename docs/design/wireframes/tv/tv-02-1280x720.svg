@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">TV-02 Pi TV wireframe</title><desc id="desc">Proposed design, illustrative only.</desc>
+<rect width="1280" height="720" fill="#11131A"/>
+<text x="68" y="76" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="36" font-weight="700">Pi TV</text>
+<text x="68" y="675" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">↑ ↓ ← → Navigate    •    OK Select    •    Back Return</text>
+<text x="68" y="114" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="28" font-weight="700">Applications</text>
+<text x="68" y="146" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Choose an available application. Provider support is not implied.</text>
+<rect x="68" y="172" width="560" height="150" rx="12" fill="#2A3443" stroke="#9ED0FF" stroke-width="3"/>
+<text x="92" y="226" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Example application</text>
+<text x="92" y="262" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Available • Press OK to open</text>
+<rect x="652" y="172" width="560" height="150" rx="12" fill="#202630" stroke="#687586" stroke-width="1"/>
+<text x="676" y="226" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Another application</text>
+<text x="676" y="262" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Available</text>
+<rect x="68" y="346" width="560" height="150" rx="12" fill="#202630" stroke="#687586" stroke-width="1"/>
+<text x="92" y="400" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Unavailable application</text>
+<text x="92" y="436" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Activation disabled • See details</text>
+<text x="92" y="471" fill="#9ED0FF" font-family="Arial, sans-serif" font-size="18" font-weight="700">Details →</text>
+<text x="952" y="76" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="18" font-weight="400">Pair device   •   Settings</text>
+</svg>

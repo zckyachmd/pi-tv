@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080" role="img" aria-labelledby="title desc">
+<title id="title">TV-03 Pi TV wireframe</title><desc id="desc">Proposed design, illustrative only.</desc>
+<rect width="1920" height="1080" fill="#11131A"/>
+<text x="100" y="106" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="48" font-weight="700">Pi TV</text>
+<text x="100" y="1017" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="22" font-weight="400">↑ ↓ ← → Navigate    •    OK Select    •    Back Return</text>
+<text x="100" y="152" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="34" font-weight="700">Opening application</text>
+<rect x="100" y="197" width="1720" height="250" rx="12" fill="#202630" stroke="#687586" stroke-width="1"/>
+<text x="128" y="257" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="28" font-weight="700">Launching…</text>
+<text x="128" y="297" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="22" font-weight="400">Please wait. Opening does not confirm playback.</text>
+<rect x="100" y="492" width="200" height="68" rx="12" fill="#2A3443" stroke="#9ED0FF" stroke-width="4"/>
+<text x="120" y="536" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="28" font-weight="700">Cancel</text>
+</svg>

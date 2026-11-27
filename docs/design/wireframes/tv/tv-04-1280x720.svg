@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">TV-04 Pi TV wireframe</title><desc id="desc">Proposed design, illustrative only.</desc>
+<rect width="1280" height="720" fill="#11131A"/>
+<text x="68" y="76" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="36" font-weight="700">Pi TV</text>
+<text x="68" y="675" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">↑ ↓ ← → Navigate    •    OK Select    •    Back Return</text>
+<text x="68" y="114" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="28" font-weight="700">Pair a controller</text>
+<rect x="68" y="156" width="210" height="210" rx="12" fill="#2A3443" stroke="#687586" stroke-width="1"/>
+<text x="90" y="251" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="18" font-weight="700">QR illustration</text>
+<text x="90" y="283" fill="#FFD18A" font-family="Arial, sans-serif" font-size="18" font-weight="700">NOT FUNCTIONAL</text>
+<text x="302" y="194" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Scan using the companion app.</text>
+<text x="302" y="234" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">The enrollment window is temporary and one-use.</text>
+<text x="302" y="266" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Local confirmation is required when approved.</text>
+<text x="302" y="306" fill="#FFD18A" font-family="Arial, sans-serif" font-size="18" font-weight="400">Expired? Renew through the approved local ceremony.</text>
+<rect x="302" y="346" width="200" height="56" rx="12" fill="#2A3443" stroke="#9ED0FF" stroke-width="3"/>
+<text x="322" y="382" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Cancel</text>
+</svg>

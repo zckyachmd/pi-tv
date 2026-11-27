@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">TV-01 Pi TV wireframe</title><desc id="desc">Proposed design, illustrative only.</desc>
+<rect width="1280" height="720" fill="#11131A"/>
+<text x="68" y="76" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="36" font-weight="700">Pi TV</text>
+<text x="68" y="675" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">↑ ↓ ← → Navigate    •    OK Select    •    Back Return</text>
+<text x="68" y="114" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="28" font-weight="700">Welcome to Pi TV</text>
+<text x="68" y="156" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="400">Set up this device using an approved local method.</text>
+<text x="68" y="192" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Local setup is available only after its security path is approved.</text>
+<rect x="68" y="224" width="1144" height="110" rx="12" fill="#202630" stroke="#687586" stroke-width="1"/>
+<text x="92" y="269" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Local setup unavailable?</text>
+<text x="92" y="304" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Open help for recovery guidance. A phone cannot approve setup.</text>
+<rect x="68" y="364" width="240" height="56" rx="12" fill="#2A3443" stroke="#9ED0FF" stroke-width="3"/>
+<text x="88" y="400" fill="#F4F5F7" font-family="Arial, sans-serif" font-size="22" font-weight="700">Open help</text>
+<rect x="332" y="364" width="260" height="56" rx="12" fill="#202630" stroke="#687586" stroke-width="1"/>
+<text x="352" y="400" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="22" font-weight="700">Begin setup</text>
+<text x="332" y="449" fill="#B3BDCA" font-family="Arial, sans-serif" font-size="18" font-weight="400">Requires approved local method</text>
+</svg>

@@ -2,7 +2,7 @@
 
 Disposable local experiment for one Mac peripheral and one iPhone central. The UUIDs and payloads are experimental. Use only synthetic data. This is not an authenticated channel.
 
-Session 2A.3.5 has exercised the current integrated pair physically; completion review remains pending. The Central includes a bounded benchmark and exports partial JSON results; failed requests stop the batch and require a fresh transport context. Use only one Peripheral instance and verify it is the current build before measuring. An earlier run had an ambiguous peer; see the [checkpoint](../../docs/planning/session-2a-completion.md) for its disposition and the later verified runs. The observed successes do not establish deadline suitability across all conditions.
+Session 2A is conditionally closed after independent review of `7b11d833275067d129c4d4198b1ac981757820ff`: F-21 passed for the tested Mac–iPhone path and F-22 was functionally validated with measurements still open. The Central includes a bounded benchmark and exports partial JSON results; failed requests stop the batch and require a fresh transport context. Use only one Peripheral instance and verify it is the current build before measuring. An earlier run had an ambiguous peer; see the [checkpoint](../../docs/planning/session-2a-completion.md) for its disposition and the later verified runs. The observed successes do not establish deadline suitability across all conditions.
 
 ## Build and launch the Mac peripheral
 
@@ -24,7 +24,7 @@ xcodebuild -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Central -co
 open prototypes/phase2a-ble/Phase2A.xcodeproj
 ```
 
-In Xcode, select the Central target, choose your development team under Signing & Capabilities, and use a unique bundle identifier if necessary. Select the connected personal iPhone as the run destination and run the Central scheme. Complete any device trust or Developer Mode prompts presented by Apple. Allow Bluetooth access. A signing identity and device authorization were used for the earlier raw echo checkpoint; the current fragmented build has not been installed or tested on a device.
+In Xcode, select the Central target, choose your development team under Signing & Capabilities, and use a unique bundle identifier if necessary. Select the connected personal iPhone as the run destination and run the Central scheme. Complete any device trust or Developer Mode prompts presented by Apple. Allow Bluetooth access. A signed fragmented Central and Mac Peripheral were used in the later physical checkpoint; exact tested binary provenance remains unresolved.
 
 With the Mac advertising, the central scans automatically. Once subscribed, select 64, 256, 1024 or 4096 bytes, tap **Send test**, and inspect the logical echo result. Tap **Disconnect**, then **Scan** to reconnect. A write acknowledgement is a GATT result, not an authenticated application acknowledgement.
 

@@ -3,150 +3,370 @@
     "name": "cc",
     "version": "1.12.0",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "96b7e093e21fa0fa0819a971768e94d92ef4346a"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "cfg-if",
     "version": "1.0.5",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "8b0a2b0fc1fa3b3741b9e72895f390cf499fe36f"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "find-msvc-tools",
     "version": "0.1.16",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "96b7e093e21fa0fa0819a971768e94d92ef4346a"
+      },
+      "path_in_vcs": "find-msvc-tools"
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "getrandom",
     "version": "0.2.17",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "b625985d852600a3eeb68556811e59e7c9a6a098"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "libc",
     "version": "0.2.191",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "ccc2ff4aaab962f7fde7b8edda7379c045b1ca12"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "once_cell",
     "version": "1.21.4",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "80fe900b21f6d76c1a2ed74d3343e8a3a88c46d0"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "ring",
     "version": "0.17.14",
     "license": "Apache-2.0 AND ISC",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "2723abbca9e83347d82b056d5b239c6604f786df",
+        "dirty": true
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE",
+      "LICENSE-other-bits",
+      "LICENSE-BoringSSL"
+    ]
   },
   {
     "name": "rustls",
     "version": "0.23.46",
     "license": "Apache-2.0 OR ISC OR MIT",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "f04804fa13341a9b1dc02b5d1dd8a746f2c4b7fb"
+      },
+      "path_in_vcs": "rustls"
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-ISC",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "rustls-pki-types",
     "version": "1.16.0",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "26de75cf1eab9143c5a97faa1effca237b401b86"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "rustls-webpki",
     "version": "0.103.17",
     "license": "ISC",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "7d4f8d83cc13d3f4169ef774aebb6319a376e000"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE"
+    ]
   },
   {
     "name": "shlex",
     "version": "2.0.1",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "e82b1411beb7c92871c2c078c9ab415bbcf207ef"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "subtle",
     "version": "2.6.1",
     "license": "BSD-3-Clause",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "5457b5448b021d1da101ababbb854e6657233943"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE"
+    ]
   },
   {
     "name": "untrusted",
     "version": "0.9.0",
     "license": "ISC",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "89c8b8415f692d3803d183fc5fbf9ec08a6adcf4"
+      }
+    },
+    "license_files": [
+      "LICENSE.txt"
+    ]
   },
   {
     "name": "wasi",
     "version": "0.11.1+wasi-snapshot-preview1",
     "license": "Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "f136a81add9706ed0b36ac3c4b0da943de8e690d"
+      },
+      "path_in_vcs": ""
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-Apache-2.0_WITH_LLVM-exception",
+      "LICENSE-MIT"
+    ]
   },
   {
     "name": "windows-sys",
     "version": "0.52.0",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "3a605cba064b26f2a198ac58085f8c8836f47c38"
+      },
+      "path_in_vcs": "crates/libs/sys"
+    },
+    "license_files": []
   },
   {
     "name": "windows-targets",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/libs/targets"
+    },
+    "license_files": []
   },
   {
     "name": "windows_aarch64_gnullvm",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/aarch64_gnullvm"
+    },
+    "license_files": []
   },
   {
     "name": "windows_aarch64_msvc",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/aarch64_msvc"
+    },
+    "license_files": []
   },
   {
     "name": "windows_i686_gnu",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/i686_gnu"
+    },
+    "license_files": []
   },
   {
     "name": "windows_i686_gnullvm",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/i686_gnullvm"
+    },
+    "license_files": []
   },
   {
     "name": "windows_i686_msvc",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/i686_msvc"
+    },
+    "license_files": []
   },
   {
     "name": "windows_x86_64_gnu",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/x86_64_gnu"
+    },
+    "license_files": []
   },
   {
     "name": "windows_x86_64_gnullvm",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/x86_64_gnullvm"
+    },
+    "license_files": []
   },
   {
     "name": "windows_x86_64_msvc",
     "version": "0.52.6",
     "license": "MIT OR Apache-2.0",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "db06b51c2ebb743efb544d40e3064efa49f28d38"
+      },
+      "path_in_vcs": "crates/targets/x86_64_msvc"
+    },
+    "license_files": []
   },
   {
     "name": "zeroize",
     "version": "1.9.2",
     "license": "Apache-2.0 OR MIT",
-    "source": "registry+https://github.com/rust-lang/crates.io-index"
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "vcs_info": {
+      "git": {
+        "sha1": "c66481d9952cb8f363e7140c7122e3d238581ca6"
+      },
+      "path_in_vcs": "zeroize"
+    },
+    "license_files": [
+      "LICENSE-APACHE",
+      "LICENSE-MIT"
+    ]
   }
 ]

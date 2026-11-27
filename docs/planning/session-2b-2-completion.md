@@ -10,3 +10,7 @@ SEC-05: bounded application framing unimplemented and untested.
 SEC-06: limits and measurements unimplemented and untested.
 
 No Rust–Swift handshake, security-negative tests, target builds, measurements, or Phase 2A regressions were run. BLE-21 and BLE-23 remain prerequisites for Session 2B.3. No hardware was accessed. The existing local Phase 2A Xcode project modification was preserved.
+
+## Gate A continuation — blocked
+
+The resolved SwiftNIO SSL 2.37.8 vendors BoringSSL with the certificate-verification memory exhaustion vulnerability CVE-2026-35189; its relevant fix is absent from the vendored source. See the [dependency checkpoint](../../evidence/phase2b/dependency-checkpoint.md) for the exact revision, source comparison, upstream advisory and reproduction. This is material to the required bounded handling of untrusted certificates. Per the admission gate, compilation and implementation did not proceed. The rest of the admission review remains incomplete; no package is claimed admitted. A fixed, explicitly approved dependency or another owner-directed remediation is needed before this gate can be reassessed.

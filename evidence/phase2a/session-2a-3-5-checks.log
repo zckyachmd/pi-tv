@@ -1,0 +1,31 @@
+Session 2A.3.5 sanitized checkpoint, 2026-11-27
+Source base: 5215862a738782cc8f32eaa3a53be0c9bdb74420; working tree includes uncommitted prototype edits and pre-existing signing configuration.
+
+cargo test --manifest-path prototypes/phase2a-ble/transport/rust/Cargo.toml -- --nocapture
+exit 0: 2 tests passed.
+swiftc prototypes/phase2a-ble/transport/swift/Fragment.swift prototypes/phase2a-ble/transport/swift/main.swift -o /tmp/pi-tv-fragment-235 && /tmp/pi-tv-fragment-235 prototypes/phase2a-ble/transport/fixtures/cases.txt
+exit 0: 103 shared fixture operations; counter exhaustion passed.
+swiftc prototypes/phase2a-ble/transport/swift/Fragment.swift prototypes/phase2a-ble/iOS/Lifecycle.swift prototypes/phase2a-ble/Mac/PeerQueue.swift prototypes/phase2a-ble/tests/integrated/main.swift -o /tmp/pi-tv-integrated-235 && /tmp/pi-tv-integrated-235
+exit 0: integrated record and flow-control regressions; 586 fragments per direction.
+swiftc prototypes/phase2a-ble/iOS/Lifecycle.swift prototypes/phase2a-ble/tests/lifecycle/main.swift -o /tmp/pi-tv-lifecycle-235 && /tmp/pi-tv-lifecycle-235
+exit 0: lifecycle and echo regressions.
+swiftc prototypes/phase2a-ble/Mac/PeerQueue.swift prototypes/phase2a-ble/tests/main.swift -o /tmp/pi-tv-queue-235 && /tmp/pi-tv-queue-235
+exit 0: PeerQueue regressions.
+xcodebuild -quiet -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Peripheral -destination 'generic/platform=macOS' CODE_SIGNING_ALLOWED=NO build
+exit 0: destination metadata warning.
+xcodebuild -quiet -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Central -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+exit 0: destination metadata warning.
+xcodebuild -quiet -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Central -configuration Debug -destination 'generic/platform=iOS' -derivedDataPath /tmp/pi-tv-235-build build
+exit 0: signed; destination metadata, orientation and launch-screen warnings.
+xcodebuild -quiet -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Peripheral -configuration Debug -destination 'generic/platform=macOS' -derivedDataPath /tmp/pi-tv-235-signed build
+exit 0: signed; destination metadata warning.
+python3 docs/design/validate_tokens.py
+exit 0: token structure, references, contrast and platform minima passed.
+python3 docs/design/validate_spec.py
+exit 0: local links and references passed.
+python3 -m unittest discover -s docs/design/token-validation-fixtures
+exit 5: no tests discovered.
+python3 docs/design/token-validation-fixtures/test_invalid.py
+exit 0: 12 negative fixtures passed.
+Device installation, app launch and retrieval used xcrun devicectl with a locally selected device identifier; exit 0. Device identifiers, signing identity and installation paths are omitted.
+Physical observations and limitations: see docs/planning/session-2a-completion.md and the adjacent JSON files.

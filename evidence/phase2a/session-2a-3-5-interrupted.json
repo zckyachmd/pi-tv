@@ -1,0 +1,124 @@
+{
+  "attempts" : [
+    {
+      "echoAt" : 3975.4846397916667,
+      "endedAt" : 3975.4848932500004,
+      "finalWriteAcknowledgedAt" : 3975.213065041667,
+      "generation" : 13,
+      "notificationFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ],
+      "outcome" : "success",
+      "payloadSize" : 4096,
+      "requestID" : 131,
+      "startedAt" : 3974.558445541667,
+      "writeCapacity" : 512,
+      "writeFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ]
+    },
+    {
+      "echoAt" : 3976.4785856666667,
+      "endedAt" : 3976.4788607083337,
+      "finalWriteAcknowledgedAt" : 3976.263030125,
+      "generation" : 13,
+      "notificationFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ],
+      "outcome" : "success",
+      "payloadSize" : 4096,
+      "requestID" : 132,
+      "startedAt" : 3975.5380043333334,
+      "writeCapacity" : 512,
+      "writeFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ]
+    },
+    {
+      "echoAt" : 3977.4975351666667,
+      "endedAt" : 3977.49779475,
+      "finalWriteAcknowledgedAt" : 3977.2530100000004,
+      "generation" : 13,
+      "notificationFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ],
+      "outcome" : "success",
+      "payloadSize" : 4096,
+      "requestID" : 133,
+      "startedAt" : 3976.533874166667,
+      "writeCapacity" : 512,
+      "writeFrameSizes" : [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ]
+    },
+    {
+      "endedAt" : 3977.735560125,
+      "failureReason" : "Benchmark cancelled",
+      "generation" : 13,
+      "notificationFrameSizes" : [
+
+      ],
+      "outcome" : "cancelled",
+      "payloadSize" : 4096,
+      "requestID" : 134,
+      "startedAt" : 3977.5512902083337,
+      "writeCapacity" : 512,
+      "writeFrameSizes" : [
+        512,
+        512,
+        512
+      ]
+    }
+  ],
+  "delayMilliseconds" : 0,
+  "requestedAttempts" : 100,
+  "status" : "Stopped: Benchmark cancelled"
+}

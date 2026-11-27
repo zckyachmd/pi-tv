@@ -72,6 +72,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
         log("Unsubscribed; pending notifications cleared")
     }
     func peripheralManager(_ peripheral: CBPeripheralManager, didReceiveWrite requests: [CBATTRequest]) {
+        expire()
         guard let first = requests.first else { return }
         let writes = requests.map { request in
             PeerQueue.Write(peer: request.central.identifier,
@@ -101,6 +102,7 @@ final class Peripheral: NSObject, ObservableObject, CBPeripheralManagerDelegate 
     }
 
     private func flush() {
+        expire()
         guard let tx, let subscriber, !transport.failed else { return }
         while let frame = transport.sender.frame() {
             let accepted = manager.updateValue(Data(frame), for: tx, onSubscribedCentrals: [subscriber])

@@ -2,6 +2,8 @@
 
 Disposable local experiment for one Mac peripheral and one iPhone central. The UUIDs and payloads are experimental. Use only synthetic data. This is not an authenticated channel.
 
+Session 2A.3.5 has exercised the current integrated pair physically; completion review remains pending. The Central includes a bounded benchmark and exports partial JSON results; failed requests stop the batch and require a fresh transport context. Use only one Peripheral instance and verify it is the current build before measuring. An earlier run had an ambiguous peer; see the [checkpoint](../../docs/planning/session-2a-completion.md) for its disposition and the later verified runs. The observed successes do not establish deadline suitability across all conditions.
+
 ## Build and launch the Mac peripheral
 
 From the repository root:
@@ -28,4 +30,4 @@ With the Mac advertising, the central scans automatically. Once subscribed, sele
 
 The peripheral accepts one subscriber; its identifier is a routing key, not an authenticated identity. Each direction sends one logical record at a time using the experimental 13-byte fragment format described in [transport/README.md](transport/README.md). The central sends one fragment per write acknowledgement. The peripheral sends notifications incrementally and retains its current frame when CoreBluetooth applies backpressure. A matching complete echo and all fragment write acknowledgements are required for success; a write acknowledgement alone is not an application result. Failures are not replayed.
 
-The earlier raw echo path was exercised on an iPhone and Mac as recorded in [the physical checkpoint](../../evidence/phase2a/physical-checkpoint.md). The integrated fragmented transport has only host-side model tests and unsigned builds; its device behavior, throughput, deadlines and callback attribution have not been physically verified. No authentication, encryption, persistence or automatic reconnection is implemented.
+The earlier raw echo path was exercised on an iPhone and Mac as recorded in [the physical checkpoint](../../evidence/phase2a/physical-checkpoint.md). Subsequent current-pair fragmented measurements and their limitations are recorded in the [2A.3.5 checkpoint](../../docs/planning/session-2a-completion.md). CoreBluetooth callback attribution and broader deadline suitability remain unverified. No authentication, encryption or automatic reconnection is implemented.

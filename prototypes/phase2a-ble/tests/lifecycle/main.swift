@@ -1,4 +1,16 @@
 import Foundation
+assert(syntheticPayload(size: 64, id: 1).count == 64)
+assert(syntheticPayload(size: 64, id: 1) != syntheticPayload(size: 64, id: 257))
+assert(syntheticPayload(size: 4096, id: UInt64.max).prefix(8) == Data(repeating: 255, count: 8))
+let sample = BenchmarkAttempt(requestID: 257, generation: 2, payloadSize: 64, startedAt: 1, writeCapacity: 20)
+let report = BenchmarkReport(requestedAttempts: 2, delayMilliseconds: 0, status: "Running", attempts: [sample])
+let encoded = try! JSONEncoder().encode(report)
+assert(try! JSONDecoder().decode(BenchmarkReport.self, from: encoded).attempts.first?.requestID == 257)
+var deadlineClock: TimeInterval = 0
+var deadlineLifecycle = Lifecycle(now: { deadlineClock })
+assert(deadlineLifecycle.move(.idle)); assert(deadlineLifecycle.move(.scanning)); assert(deadlineLifecycle.move(.connecting, timeout: 10))
+deadlineClock = 10
+assert(!deadlineLifecycle.move(.services)); assert(deadlineLifecycle.state == .connecting)
 var clock: TimeInterval = 0
 func ready(_ l: inout Lifecycle) {
     assert(l.move(.idle)); assert(l.move(.scanning)); assert(l.move(.connecting)); assert(l.move(.services)); assert(l.move(.characteristics)); assert(l.move(.subscribing)); assert(l.move(.ready))

@@ -1,0 +1,23 @@
+{
+  "attempts" : [
+    {
+      "endedAt" : 3093.576555375,
+      "failureReason" : "Write failed",
+      "generation" : 1,
+      "notificationFrameSizes" : [
+
+      ],
+      "outcome" : "writeFailure",
+      "payloadSize" : 256,
+      "requestID" : 101,
+      "startedAt" : 3093.5101730833335,
+      "writeCapacity" : 512,
+      "writeFrameSizes" : [
+        269
+      ]
+    }
+  ],
+  "delayMilliseconds" : 0,
+  "requestedAttempts" : 100,
+  "status" : "Stopped: Write failed"
+}

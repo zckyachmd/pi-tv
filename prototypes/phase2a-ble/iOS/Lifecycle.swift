@@ -7,6 +7,7 @@ struct Lifecycle {
     private(set) var deadline: TimeInterval?
     var now: () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
     mutating func move(_ next: State, timeout: TimeInterval? = nil) -> Bool {
+        if expired() && ![State.unavailable, .failed, .disconnected, .disconnecting].contains(next) { return false }
         let allowed: Bool
         switch (state, next) {
         case (_, .unavailable), (_, .failed), (_, .disconnected), (_, .disconnecting): allowed = true
@@ -23,6 +24,27 @@ struct Lifecycle {
     }
     var canSend: Bool { state == .ready }
     func expired() -> Bool { deadline.map { now() >= $0 } ?? false }
+}
+
+func syntheticPayload(size: Int, id: UInt64) -> Data {
+    precondition(size >= 8)
+    var data = Data((0..<size).map { UInt8(truncatingIfNeeded: $0) })
+    for index in 0..<8 { data[index] = UInt8(truncatingIfNeeded: id >> ((7 - index) * 8)) }
+    return data
+}
+
+struct BenchmarkAttempt: Codable {
+    let requestID: UInt64, generation: UInt64, payloadSize: Int
+    let startedAt: TimeInterval, writeCapacity: Int
+    var writeFrameSizes: [Int] = [], notificationFrameSizes: [Int] = []
+    var finalWriteAcknowledgedAt: TimeInterval?, echoAt: TimeInterval?, endedAt: TimeInterval?
+    var outcome: String?, failureReason: String?
+}
+
+struct BenchmarkReport: Codable {
+    let requestedAttempts: Int, delayMilliseconds: Int
+    let status: String
+    let attempts: [BenchmarkAttempt]
 }
 
 struct EchoRequest {

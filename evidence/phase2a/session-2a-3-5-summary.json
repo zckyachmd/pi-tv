@@ -1,0 +1,124 @@
+{
+  "batches": [
+    {
+      "attempted": 100,
+      "cancelled": 0,
+      "failed": 0,
+      "inbound_frame_sizes": [
+        77
+      ],
+      "outbound_frame_sizes": [
+        77
+      ],
+      "outbound_useful_bytes_per_second": 1260.2925843077123,
+      "payload_bytes": 64,
+      "raw_result": "session-2a-3-5-current-64-byte.json",
+      "rtt_ms_nearest_rank": {
+        "50": 54.402083333116025,
+        "95": 71.34837500007052,
+        "99": 85.35279166699183
+      },
+      "successful": 100,
+      "timed_out": 0
+    },
+    {
+      "attempted": 10,
+      "cancelled": 0,
+      "failed": 0,
+      "inbound_frame_sizes": [
+        269
+      ],
+      "outbound_frame_sizes": [
+        269
+      ],
+      "outbound_useful_bytes_per_second": 3581.1245360571043,
+      "payload_bytes": 256,
+      "raw_result": "session-2a-3-5-current-256-byte.json",
+      "rtt_ms_nearest_rank": {
+        "50": 81.9341666665423,
+        "95": 119.44070833305886,
+        "99": 119.44070833305886
+      },
+      "successful": 10,
+      "timed_out": 0
+    },
+    {
+      "attempted": 10,
+      "cancelled": 0,
+      "failed": 0,
+      "inbound_frame_sizes": [
+        512,
+        512,
+        39
+      ],
+      "outbound_frame_sizes": [
+        512,
+        512,
+        39
+      ],
+      "outbound_useful_bytes_per_second": 4426.197346625502,
+      "payload_bytes": 1024,
+      "raw_result": "session-2a-3-5-current-1024-byte.json",
+      "rtt_ms_nearest_rank": {
+        "50": 259.1530416666501,
+        "95": 400.5052499996964,
+        "99": 400.5052499996964
+      },
+      "successful": 10,
+      "timed_out": 0
+    },
+    {
+      "attempted": 10,
+      "cancelled": 0,
+      "failed": 0,
+      "inbound_frame_sizes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ],
+      "outbound_frame_sizes": [
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        512,
+        117
+      ],
+      "outbound_useful_bytes_per_second": 5502.275397749094,
+      "payload_bytes": 4096,
+      "raw_result": "session-2a-3-5-current-4096-byte.json",
+      "rtt_ms_nearest_rank": {
+        "50": 939.775291667047,
+        "95": 1020.6092083335534,
+        "99": 1020.6092083335534
+      },
+      "successful": 10,
+      "timed_out": 0
+    }
+  ],
+  "inbound_throughput": "NOT_OBSERVABLE: no first-notification timestamp",
+  "interruption": "three successful 4096-byte attempts followed by one cancelled attempt after three outbound frames; Mac displayed unsubscribe cleanup",
+  "outbound_boundary": "sum successful payload bytes divided by sum admission-to-final-write-ack intervals, includes local JSON write",
+  "owner_reported": [
+    "10 reconnects and fresh 1024-byte request succeeded; durations unavailable",
+    "fresh 1024-byte request succeeded after interrupted transfer",
+    "Bluetooth off/on recovery and fresh 1024-byte request succeeded",
+    "1024-byte and 4096-byte requests, reconnect, and another 1024-byte request succeeded with USB disconnected and iPhone Wi-Fi and cellular disabled"
+  ],
+  "per_attempt_queue_buffer_and_backpressure": "NOT_OBSERVABLE: not instrumented",
+  "percentiles": "nearest rank ceil(p*n); 10-sample p95 and p99 are maxima",
+  "physical_backpressure": "OBSERVED in bounded Mac display; exact count and attribution unavailable",
+  "rtt_boundary": "request admission timestamp to complete matching echo, includes local JSON write before send",
+  "source_base": "5215862a738782cc8f32eaa3a53be0c9bdb74420",
+  "source_state": "uncommitted 2A.3.5 edits and pre-existing signing configuration",
+  "status": "completion_review_pending"
+}

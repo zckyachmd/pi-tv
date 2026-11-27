@@ -4,7 +4,7 @@ Date: 2026-11-27. Status: owner direction incorporated; detailed acceptance, imp
 
 ## Product and decisions
 
-A local-first HDMI entertainment appliance runs media on a Raspberry Pi; an iPhone is a remote, not a video relay. Owner-directed: Pi 4 Model B **1 GB physical RAM**, BLE remote with QR-assisted secure application enrollment, no shared Wi-Fi/LAN requirement, modern iOS first, Rust core, host-first macOS development, preservation of existing Pi workloads, provider/runtime/client independence. The Pi may independently use Ethernet or Wi-Fi for streaming. GPL-3.0-only is proposed for first-party code with a separate trademark policy; scope and distribution remain to be reviewed. SwiftUI/CoreBluetooth, BlueZ/BlueR and React/TypeScript/Vite are preferred candidates, not validated production decisions.
+A local-first HDMI entertainment appliance runs media on a Raspberry Pi; an iPhone is a remote, not a video relay. Owner-directed: Pi 4 Model B **1 GB physical RAM**, BLE remote with QR-assisted secure application enrollment, no shared Wi-Fi/LAN requirement, modern iOS first, Rust core, host-first macOS development, preservation of existing Pi workloads, provider/runtime/client independence. The Pi may independently use Ethernet or Wi-Fi for streaming. The owner selected GPL-3.0-only for the first-party Rust core and TV launcher, with a separate trademark policy; other scope and distribution remain under review. SwiftUI/CoreBluetooth, BlueZ/BlueR and React/TypeScript/Vite are preferred candidates, not validated production decisions.
 
 ## Requirements and acceptance
 

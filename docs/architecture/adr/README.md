@@ -9,7 +9,7 @@
 | [003](003-platform.md) | Rust core, native iOS and BlueZ adapters | Rust owner-directed; adapters proposed |
 | [004](004-runtime.md) | One foreground runtime and isolated launcher | Proposed |
 | [005](005-deployment.md) | Dedicated and protected Shared Host | Protection owner-directed; mechanics proposed |
-| [006](006-license.md) | GPL-3.0-only and trademark policy | Proposed; legal/distribution review required |
+| [006](006-license.md) | GPL-3.0-only and trademark policy | Owner-selected initial scope; legal/distribution review required |
 
 ## Remaining decision coverage
 
@@ -24,4 +24,4 @@ These are decision records in this index, not additional ratified ADRs. Owner ap
 | Performance and resource policy | Proposed under [005](005-deployment.md): dedicated and shared profiles with measured resource limits; stronger isolation may reduce playback capacity. | [Benchmark protocol](../BENCHMARKS.md), existing-workload protection and actual target evidence; owner approval. |
 | Reference OS and dependencies | Proposed under [003](003-platform.md) and [004](004-runtime.md): Raspberry Pi OS Lite ARM64 and OS-packaged browser candidates, exact versions unresolved. | Supported packages, security updates, licenses, DRM, ABI and physical target comparison; platform and owner approval. |
 | Packaging and release | Proposed under [005](005-deployment.md): versioned Debian package, signed APT for public distribution and manual rollback; prepared media or documented installation required. | Clean and interrupted lifecycle, signing, restore and source distribution tests; release and owner approval. |
-| iOS licensing and distribution | Owner-directed GPLv3 and separate trademark policy; GPL-3.0-only scope and TestFlight/App Store distribution remain proposed under [006](006-license.md). | Provenance, corresponding source, current platform terms and legal review; owner approval, no compatibility presumption. |
+| iOS licensing and distribution | Owner-selected GPL-3.0-only for the first-party Rust core and TV launcher; iOS licensing and TestFlight/App Store distribution remain pending under [006](006-license.md). | Provenance, corresponding source, current platform terms and legal review; owner approval, no compatibility presumption. |

@@ -1,20 +1,20 @@
 # UX flows
 
-Proposed for review. Screen IDs refer to the [inventory](SCREEN_INVENTORY.md); state names and independent dimensions are defined in the [state model](UI_STATE_MODEL.md). Local enrollment, its trusted input and any existing-controller authority remain subject to owner and security approval. These diagrams describe conditional UX, not approved security mechanisms. [Protocol](../architecture/BLE_PROTOCOL.md) and [recovery](../architecture/RECOVERY.md) govern the proposed boundaries.
+Proposed for review. Screen IDs refer to the [inventory](SCREEN_INVENTORY.md); state names and independent dimensions are defined in the [state model](UI_STATE_MODEL.md). Phone-based enrollment, recovery proof and owner authority remain subject to independent security approval. These diagrams describe conditional UX, not approved security mechanisms. [Protocol](../architecture/BLE_PROTOCOL.md) and [recovery](../architecture/RECOVERY.md) govern the proposed boundaries.
 
 ## 1. First boot and secure enrollment
 
 ```mermaid
 flowchart LR
- A[TV-01 Local provisioning] -->|approved local mechanism| B[TV-04 Enrollment QR]
+ A[TV-01 Prepared unowned appliance] -->|candidate automatic bootstrap| B[TV-04 Enrollment QR]
  B --> C[IOS-03 Scan] --> D[IOS-04 Authenticate]
- D --> E[TV-05 Await local confirmation]
- E -->|approved local confirmation and durable commit| F[IOS-05 Select device]
+ D --> E[TV-05 Display comparison]
+ E -->|informed iPhone confirmation and durable commit| F[IOS-05 Select device]
  E -->|reject, expiry or uncertain commit| G[Enrollment closed; renewal required]
- G -->|approved renewal ceremony| B
+ G -->|reviewed applicable renewal policy| B
 ```
 
-The QR is one-use and expires; display is not authorization. Authenticate the intended identity, bind enrollment to the session, and show success only after commit. If no approved local path exists, explain the blocker; do not substitute an unauthenticated phone.
+The candidate QR is one-use and expires; possession of its secret is proposed bootstrap authorization, not proof of independent physical presence. Authenticate the intended identity, bind enrollment to the session, and show success only after commit. The candidate phone confirmation is not an approved security mechanism; if no reviewed scheme is acceptable, production is blocked.
 
 ## 2. Normal connection and authenticated control
 
@@ -47,11 +47,11 @@ flowchart LR
  A[TV-04 QR] --> B[IOS-03 Scanner] --> C{Validate and authenticate}
  C -->|invalid, expired, reused or wrong identity| D[IOS-04 Error]
  D -->|retry| B
- D -->|new window via approved local path| A
- C -->|valid and authenticated| E[TV-05 Local confirmation]
+ D -->|new window via applicable reviewed policy| A
+ C -->|valid and authenticated| E[TV-05 Display comparison]
 ```
 
-Fail closed; never display the payload or treat discovery hints as identity. A new QR requires a new approved local window.
+Fail closed; never display the payload or treat discovery hints as identity. Never-owned bootstrap renewal requires a reviewed policy; owned-device renewal requires authenticated authorization.
 
 ## 5. Connection loss, reconnect and synchronization
 
@@ -70,13 +70,13 @@ Disable commands immediately; release held keys. Playback may continue. Reconcil
 ```mermaid
 flowchart LR
  A[TV-06 or IOS-09 Management] --> B{Request allowed by policy?}
- B -->|yes, and approved local path available| C[TV-04 New QR]
+ B -->|authenticated owner authorizes and approves under reviewed policy| C[TV-04 New QR]
  B -->|no or undecided| D[TV-10 Local recovery guidance]
- C --> E[IOS-03 Scan] --> F[IOS-04 Authentication] --> G[TV-05 Local confirmation]
+ C --> E[IOS-03 Scan] --> F[IOS-04 Authentication] --> G[TV-05 Display comparison]
  G --> H[TV-06 Manage devices]
 ```
 
-An existing controller is not assumed to authorize another. Replacement does not automatically revoke the old identity; revoke separately through an authorized path.
+An ordinary controller is not assumed to have owner authority. Replacement does not automatically revoke the old identity; revoke separately through an authorized path.
 
 ## 7. Revocation and all-devices-lost recovery
 
@@ -85,7 +85,7 @@ flowchart LR
  A[TV-06 or IOS-09 Device management] --> B[Authorized revoke confirmation]
  B -->|persisted| C[Revoked; terminate session]
  C --> D[IOS-10 Fresh enrollment required]
- D -->|all devices lost, approved local path| E[TV-10 Recovery] --> F[TV-04 New enrollment]
+ D -->|all devices lost, independently saved recovery proof| E[TV-10 Recovery guidance] --> F[IOS-04 Candidate recovery proof]
 ```
 
 The remote action is offered only if policy authorizes it. Outage alone is not revocation; recovery does not silently erase identity or provider profiles.
@@ -94,9 +94,9 @@ The remote action is offered only if policy authorizes it. Outage alone is not r
 
 ```mermaid
 flowchart LR
- A[TV-07 Settings] --> B[Local reset scope and confirmation]
+ A[TV-07 Settings] --> B[Authenticated owner reset scope and confirmation on phone]
  B -->|cancel| A
- B -->|approved local confirmation| C[Reset in progress]
+ B -->|reviewed owner authorization| C[Reset in progress]
  C -->|complete| D[TV-01 Provisioning]
  C -->|interrupted or uncertain| E[TV-10 Local recovery]
 ```

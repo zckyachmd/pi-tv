@@ -9,7 +9,7 @@ Proposed, 2026-11-27. This is a presentation vocabulary, not a wire protocol. Th
 | Discovering | Show progress and cancellation; no control commands. |
 | Connecting | Show transport progress; do not call this authenticated. |
 | Authenticating | Show session authentication progress; disable commands. |
-| Awaiting enrollment confirmation | Ask for confirmation through the approved trusted local path; show expiration and cancellation. |
+| Awaiting enrollment confirmation | Display comparison on TV and request informed iPhone confirmation under the candidate reviewed ceremony; show expiration and cancellation. |
 | Synchronizing | Transport is connected and authentication succeeded; obtain authenticated capabilities and a current state snapshot. Commands remain disabled. |
 | Ready | The peer identity is authenticated and authorized, and authenticated capabilities and an authoritative current state snapshot have been synchronized for this session. Enable only supported controls. |
 | Disconnected | Explain loss; playback may continue; do not infer revocation. |
@@ -25,7 +25,7 @@ Proposed, 2026-11-27. This is a presentation vocabulary, not a wire protocol. Th
 
 These dimensions can coexist: a command result does not replace connection state. Presentation receives sanitized status, public device labels, capabilities, revisions, and bounded results, never cryptographic secrets, enrollment credentials or provider credentials. QR rendering is a narrowly scoped trusted local enrollment operation; avoid logging or exposing its secret to general presentation state.
 
-An existing trusted controller may request enrollment only if policy permits; local confirmation remains required under the current proposal. Whether it may authorize adding another controller remains an owner and security decision, not a UI assumption. Recovery and local enrollment mechanisms are conditional on approval and review.
+An authenticated owner may authorize adding a controller under a security-reviewed policy; ordinary controller status alone is insufficient. Initial phone confirmation and independent recovery proof remain unratified candidates.
 
 Transport, authentication, synchronization, runtime and command results are independent dimensions. Loss or invalidation of authentication, capabilities, or the current snapshot exits Ready and disables control until synchronization succeeds again. Runtime application status and individual command outcomes do not establish readiness.
 

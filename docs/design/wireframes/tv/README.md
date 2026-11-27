@@ -1,3 +1,5 @@
+> **Superseded historical design evidence.** See the [active v2 index](../v2/README.md).
+
 # TV wireframes — batch A
 
 Proposed static illustrations. SVG sources and PNG previews; controls do not implement behavior.

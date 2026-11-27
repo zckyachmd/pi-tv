@@ -10,16 +10,16 @@ Arrows select visible enabled candidates whose centers lie in the requested half
 
 | Screen | Focus nodes and transitions |
 |---|---|
-| TV-01 | Initial focus: first enabled local setup action, otherwise Help. Up/down moves among enabled actions; Setup → TV-04 only through approved local mechanism; Help → TV-10. Back stays if there is no prior screen. |
+| TV-01 | Display-only before authentication; automatically proceed to candidate unowned bootstrap. No focus or Pi input required. |
 | TV-02 | Initial focus: restored tile; otherwise first enabled tile; otherwise empty-state action. Left/right moves to the nearest enabled tile in the row, stops at edges. Up/down moves to the nearest enabled tile in the adjacent row, retaining the original column intent across short rows; when no row exists use the nearest enabled header/navigation action in that direction, otherwise stay. Header actions route to TV-04 or TV-07. Activate an available tile → TV-03; unavailable app activation remains disabled; its separate enabled, accessible Details action → TV-09. |
 | TV-03 | Initial focus Cancel if enabled; otherwise Home if present. Cancel/Back → TV-02 and restores tile; failure → TV-09 or TV-10 with its initial focus. |
-| TV-04 | Initial focus Cancel. Up/down traverses enabled actions; QR itself is not focusable. Cancel/Back returns to invoker; timeout replaces actionable content without stealing focus unless current node disappears; renewal requires the approved ceremony. Peer pending → TV-05. |
-| TV-05 | Modal trap: initial focus Reject/Cancel, not approval. Left/right traverse enabled dialog actions; Back rejects when safe. Approval is reachable only through approved trusted local input; completion or rejection returns to invoker or appropriate management screen. |
+| TV-04 | Display-only before authentication; phone can cancel. QR is not focusable. Renewal follows the applicable reviewed unowned bootstrap or authenticated owner policy; peer pending → TV-05. |
+| TV-05 | Display-only comparison before authentication; confirmation or rejection occurs on iPhone under the candidate reviewed ceremony. No focus or TV approval button is required. |
 | TV-06 | Initial focus first enabled device row, otherwise Add or Back. Up/down traverse list, then adjacent actions at boundaries; selecting a row opens a dialog with Cancel initial focus. Add → TV-04 only if permitted. Back restores invoking action. |
 | TV-07 | Initial focus first enabled settings row. Up/down traverses enabled rows; device management → TV-06, diagnostics → TV-08, reset → confirmation modal. Back → TV-02 and restores invoking action. |
 | TV-08 | Initial focus first enabled recovery action, otherwise Back. Up/down traverses actions; recovery → TV-10; Back restores the originating TV-07 or TV-10 screen and its invoking focus. |
 | TV-09 | Initial focus Back, or Retry if it is the sole non-destructive enabled action. Up/down moves between actions; Back → TV-02, restoring tile. |
-| TV-10 | Initial focus Home when enabled, otherwise first approved local recovery action. Up/down moves through enabled actions; Home → TV-02; Diagnostics → TV-08; local recovery → TV-01 only when approved; safe Retry → TV-03. |
+| TV-10 | Initial focus Home when enabled, otherwise first approved local recovery action. Up/down moves through enabled actions; Home → TV-02; Diagnostics → TV-08; recovery guidance → authenticated phone or independent recovery proof; safe Retry → TV-03. |
 
 A modal captures all directional and activation events; directional edges stay inside it. Back cancels only when safe. On dismissal restore the invoking control if visible and enabled; otherwise nearest enabled sibling, then a focusable page heading or page-level action. During reset or an irreversible commit, Back is disabled if cancellation cannot safely be honored and the state is explained.
 
@@ -37,4 +37,4 @@ Text input owns arrow, select and editing keys while active. An explicit Done, C
 | Text field active | Left, type, Done | Input receives edit keys; Done releases ownership and returns to invoker. |
 | Last Home tile is now unavailable/disabled | Home | First enabled tile, or empty-state action when none exist. |
 | TV-10 with Retry disabled and Home enabled | Down/Up | Skip Retry; remain within enabled recovery actions and expose its reason. |
-| TV-04 QR expires while Cancel focused | Expiry | Cancel retains focus if still enabled; expired QR cannot enroll. |
+| TV-04 QR expires before authentication | Expiry | Display expired state; no TV input is required and expired QR cannot enroll. |

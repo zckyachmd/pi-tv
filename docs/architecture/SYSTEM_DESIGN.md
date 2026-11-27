@@ -43,7 +43,7 @@ sequenceDiagram
  T->>I: Enrollment result; establish session
 ```
 
-Persistence must survive power loss without reusing an enrollment secret: atomic durable updates, restrictive permissions, versioned migration and explicit recovery on corruption. A consumed secret and authorized identity require transaction-like crash semantics; if uncertain after crash, fail closed and issue a fresh QR. Trust store, settings and provider browser profile have distinct access and backup policies. No secret in logs or diagnostics.
+Persistence must survive power loss without reusing an enrollment secret: atomic durable updates, restrictive permissions, versioned migration and explicit recovery on corruption. A consumed secret and authorized identity require transaction-like crash semantics; if uncertain after crash, fail closed; renew only under the applicable reviewed authorization policy. Trust store, settings and provider browser profile have distinct access and backup policies. No secret in logs or diagnostics.
 
 ```mermaid
 sequenceDiagram
@@ -70,6 +70,6 @@ Create only when production is authorized: `crates/protocol`, `crates/core`, `cr
 
 ## Ownership and boundaries
 
-BLE framing, secure channel, application session and transport-independent commands are separate layers as specified in [protocol](BLE_PROTOCOL.md). The session owns authenticated peer identity and authorization; core owns authoritative desired app state, revisions and admission; runtime adapters report observed outcomes, never manufacture playback state. The trust store owns durable device identities; the browser owns its isolated provider profile; neither is a UI cache. The trusted local provisioning and recovery path is specified in [recovery](RECOVERY.md).
+BLE framing, secure channel, application session and transport-independent commands are separate layers as specified in [protocol](BLE_PROTOCOL.md). The session owns authenticated peer identity and authorization; core owns authoritative desired app state, revisions and admission; runtime adapters report observed outcomes, never manufacture playback state. The trust store owns durable device identities; the browser owns its isolated provider profile; neither is a UI cache. The candidate phone-based provisioning and recovery path is specified in [recovery](RECOVERY.md).
 
 The proposed repository layout above is a planning map, not a mandate to create crates. [Module boundaries](MODULE_BOUNDARIES.md) owns dependency direction, interfaces, errors and tests. Decisions on schema, IPC, persistence, resources and platform dependencies remain in the [ADR index](adr/README.md).

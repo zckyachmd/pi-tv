@@ -35,14 +35,18 @@ The earlier summary table is supplemented by this explicit crosswalk. “Retaine
 | F-11 | Retained: four reference providers, no unsupported claims | [R-11, R-15](../../PRD.md) |
 | F-12 | Deferred: custom HTTPS apps and safe icon handling | [scope](../../PRD.md); future separate review |
 | F-13 | Deferred: browser remote with secure onboarding | [scope](../../PRD.md) |
-| F-14 | Signed APT and rollback retained for public distribution; image and recovery tooling deferred | [R-21](../../PRD.md); [deployment ADR](adr/005-deployment.md) |
+| F-14 | Signed APT and rollback retained for public distribution; prepared media or documented installer required; recovery proof remains a security gate | [R-21](../../PRD.md); [deployment ADR](adr/005-deployment.md) |
 | F-15 | Multi-device, accessibility and localization retained; store distribution conditional | [R-14, R-19, R-23](../../PRD.md); [license ADR](adr/006-license.md) |
 | F-16 | Deferred: Android, native media, CEC, background audio and other hardware | [scope](../../PRD.md) |
 | §§1–4 hardware, compatibility, isolation, lifecycle | Retained as target and evidence gates; reference OS and dependency choices unresolved | [R-01, R-06, R-10, R-11](../../PRD.md); [system](SYSTEM_DESIGN.md); [ADR index](adr/README.md) |
 | §§5–6 LAN protocol and security | WSS, IP discovery and LAN-specific onboarding superseded; identity, least privilege, sandbox and secret protections retained | [R-07](../../PRD.md); [protocol](BLE_PROTOCOL.md); [threats](THREAT_MODEL.md) |
 | §7 performance | Retained as proposals except LAN latency replaced by BLE measurements | [R-12, R-16–R-18](../../PRD.md); [benchmarks](BENCHMARKS.md) |
-| §8 packaging and operations | Retained package state safety, signing and rollback; image deferred | [R-09, R-21](../../PRD.md) |
+| §8 packaging and operations | Retained package state safety, signing and rollback; prepared media or documented installer required | [R-09, R-21](../../PRD.md) |
 | §9 engineering governance | Retained dependency and test governance; detailed CI policy deferred | [R-22](../../PRD.md); [boundaries](MODULE_BOUNDARIES.md) |
 | §§10–13 phases and evidence | Historical sequence superseded by current owner gates; observations preserved, no prototype implies target validation | [R-11–R-14](../../PRD.md); [risk register](RISK_REGISTER.md) |
 
-The handoff BLE, application, operations, security and licensing proposals map to R-01–R-23. Handoff design-system detail is deferred to Session 1C.2; its accessibility and localization outcomes remain R-19. Hardware and physical-phone gates in the handoff roadmap remain unexecuted.
+The handoff BLE, application, operations, security and licensing proposals map to R-01–R-25. Handoff design-system detail is deferred to Session 1C.2; its accessibility and localization outcomes remain R-19. Hardware and physical-phone gates in the handoff roadmap remain unexecuted.
+
+## Owner-directed keyboard-free reconciliation
+
+R-01, R-02, R-04, R-05, R-08, R-20 and R-23 now include phone-based first boot, management and recoverable failures without additional input devices. R-24 covers prepared media; R-25 covers optional authenticated BLE internet setup. Prior independent local HID confirmation and deferred image direction are superseded, while security review, physical tests and historical evidence remain open. See [recovery](RECOVERY.md) and [active wireframes](../design/wireframes/v2/README.md).

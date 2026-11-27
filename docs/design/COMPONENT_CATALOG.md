@@ -16,7 +16,7 @@ Proposed contracts, not a requirement to create one source file per entry. TV us
 | TV SettingsRow | Label, value, optional action; single row | Public value and enabled → intent; settings feature owns persistence | Keyboard activation, disabled reason, readable value. |
 | TV ErrorPanel | Message and recovery action; error/offline/empty variants | Sanitized error and actions → retry/back intent; screen owns retries | Unknown outcome is not called success or automatically replayed. |
 | TV LoadingState | Static progress text and optional cancel | Loading description → cancel; screen owns task | Announce progress without perpetual animation; cancel returns focus. |
-| TV RecoveryPanel | Explanation and approved local actions, composed from ErrorPanel/Dialog | Recovery status → local intent; security owner controls authorization | No reset or enrollment confirmation solely from untrusted phone. |
+| TV RecoveryPanel | Explanation and approved local actions, composed from ErrorPanel/Dialog | Recovery status → local intent; security owner controls authorization | No reset from an untrusted phone; bootstrap phone confirmation is conditional on the reviewed candidate ceremony. |
 | iOS DeviceRow | Device label, status and optional selected mark; native list row | Public device ID, status → select; device feature owns identity | VoiceOver states selected/revoked; never shows credential. |
 | iOS ConnectionStatus | Label and optional recovery action | Session status → settings/retry intent; session owner maps state | BLE link alone never reads authenticated. |
 | iOS DPad | Five labeled independent controls; adaptive layout | Enabled/capability → direction/select intent; remote composes RemoteButton | Each target ≥44 pt and usable with VoiceOver. |
@@ -26,7 +26,7 @@ Proposed contracts, not a requirement to create one source file per entry. TV us
 | iOS VolumeControl | Minus, mute, plus or native adjustable control | Observed volume/capability → set/mute intent; remote owns state | Adjustable VoiceOver action and 44 pt targets; no optimistic success claim. |
 | iOS KeyboardSheet | Native text field, send and cancel; adaptive sheet | Bounded text policy → explicit send/cancel; feature owns sensitive input lifetime | No text logging; focus stays in input; dismissal restores focus. |
 | iOS PairingScanner | Native camera permission and scan guidance | Permission and bounded scan result → enrollment request to secure owner; scanner never displays payload | Denied permission is actionable; wrong/expired code fails closed. |
-| iOS PairingResult | Status, instructions and next action; pending/success/error | Sanitized result → retry/close; session owns authentication | Pending local confirmation is not success; expired and wrong identity explained. |
+| iOS PairingResult | Status, instructions and next action; pending/success/error | Sanitized result → retry/close; session owns authentication | Pending phone confirmation is not success; expired and wrong identity explained. |
 | iOS ErrorBanner | Concise error and optional action | Sanitized error → retry/dismiss intent; screen owns policy | VoiceOver announces actionable failure; unknown stays unknown. |
 
 No additional wrapper is required for native controls. PairingCodePanel is a narrowly scoped trusted rendering boundary rather than a general-purpose QR component; the exact mechanism remains security review work.

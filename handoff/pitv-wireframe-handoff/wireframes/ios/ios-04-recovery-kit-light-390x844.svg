@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc"><title id="title">IOS-04 recovery-kit</title><desc id="desc">Static design proposal, sample data, not functional.</desc>
+<rect x="0" y="0" width="390" height="844" rx="0" fill="#F4F6F9"/>
+<text x="24" y="34" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="700" fill="#11131A" text-anchor="start">9:41</text>
+<text x="366" y="34" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="end">Bluetooth</text>
+<path d="M24 48L366 48" fill="none" stroke="#64748B" stroke-width="1" stroke-linecap="round"/>
+<text x="24" y="88" font-family="DejaVu Sans, sans-serif" font-size="28" font-weight="700" fill="#11131A" text-anchor="start">Save recovery kit</text>
+<text x="24" y="118" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">Your TV is paired. Save a backup before</text>
+<text x="24" y="142" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">using your remote.</text>
+<rect x="24" y="190" width="342" height="86" rx="12" fill="#FFFFFF"/>
+<path transform="translate(38 212) scale(1.3333333333333333)" d="M6 10H18V22H6Z M8 10V6Q8 2 12 2Q16 2 16 6V10" fill="none" stroke="#174A82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="82" y="220" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#11131A" text-anchor="start">Recovery kit</text>
+<text x="82" y="244" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Keep it somewhere you can access if</text>
+<text x="82" y="261" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">this iPhone is lost.</text>
+<rect x="24" y="300" width="342" height="52" rx="12" fill="#174A82"/>
+<text x="195.0" y="331.78" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#FFFFFF" text-anchor="middle">Save recovery kit</text>
+<rect x="24" y="364" width="342" height="52" rx="12" fill="#E4E9F0"/>
+<text x="195.0" y="395.78" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#11131A" text-anchor="middle">I have saved it</text>
+<text x="24" y="438" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Illustration only. Never share the recovery</text>
+<text x="24" y="458" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">credential.</text>
+<text x="24" y="502" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Backup and storage choices require security</text>
+<text x="24" y="522" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">review.</text>
+</svg>

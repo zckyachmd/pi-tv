@@ -1,4 +1,5 @@
 module CRustls {
     header "rustls.h"
+    header "experiment.h"
     export *
 }

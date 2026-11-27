@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc"><title id="title">IOS-04 base</title><desc id="desc">Static design proposal, sample data, not functional.</desc>
+<rect x="0" y="0" width="390" height="844" rx="0" fill="#11131A"/>
+<text x="24" y="34" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="700" fill="#F4F5F7" text-anchor="start">9:41</text>
+<text x="366" y="34" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="400" fill="#B3BDCA" text-anchor="end">Bluetooth</text>
+<path d="M24 48L366 48" fill="none" stroke="#687586" stroke-width="1" stroke-linecap="round"/>
+<text x="24" y="88" font-family="DejaVu Sans, sans-serif" font-size="28" font-weight="700" fill="#F4F5F7" text-anchor="start">Verify your TV</text>
+<text x="24" y="118" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" fill="#B3BDCA" text-anchor="start">Check that the phrase matches your TV</text>
+<text x="24" y="142" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" fill="#B3BDCA" text-anchor="start">screen.</text>
+<rect x="24" y="186" width="342" height="132" rx="18" fill="#202630"/>
+<path transform="translate(42 208) scale(1.5)" d="M12 2L21 6V12Q21 18 12 22Q3 18 3 12V6Z M8 12L11 15L17 9" fill="none" stroke="#9ED0FF" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="88" y="221" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" fill="#9ED0FF" text-anchor="start">RIVER · MAPLE · SKY</text>
+<text x="42" y="260" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#B3BDCA" text-anchor="start">Illustrative phrase, not a real pairing</text>
+<text x="42" y="280" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#B3BDCA" text-anchor="start">secret.</text>
+<rect x="24" y="344" width="342" height="52" rx="12" fill="#9ED0FF"/>
+<text x="195.0" y="375.78" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#11131A" text-anchor="middle">Phrase matches</text>
+<rect x="24" y="408" width="342" height="52" rx="12" fill="#2A3443"/>
+<text x="195.0" y="439.78" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#F4F5F7" text-anchor="middle">Cancel pairing</text>
+<text x="24" y="480" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#B3BDCA" text-anchor="start">Only confirm if you can see the matching phrase</text>
+<text x="24" y="500" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#B3BDCA" text-anchor="start">on your TV.</text>
+</svg>

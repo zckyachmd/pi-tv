@@ -1,0 +1,5 @@
+# ADR 003 — Core and platform adapters
+
+Status: Rust core owner-directed; adapters proposed. Authority: product owner after platform review.
+
+**Context:** iOS first, independent core and host-first workflows. **Alternatives:** native SwiftUI/CoreBluetooth versus React Native native bridge; BlueR versus direct BlueZ D-Bus; both still need platform testing. **Direction:** Rust core with small ports; SwiftUI/CoreBluetooth and BlueZ/BlueR preferred. **Rationale/tradeoff:** native access reduces bridge complexity but Android will need a separate client; BlueR adds dependency and version exposure. **Evidence:** [CoreBluetooth](https://developer.apple.com/documentation/corebluetooth) and [BlueR](https://docs.rs/bluer/latest/bluer/) reviewed 2026-11-27; previous Swift prototype is Bonjour/WSS, not BLE. **Consequences:** fake adapters support host tests; no claim that a Mac proves Pi or phone behavior. **Validation:** library maintenance/license, actual D-Bus/adapter capabilities, physical iPhone and ARM64 target execution.

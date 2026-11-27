@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc"><title id="title">IOS-07 base</title><desc id="desc">Static design proposal, sample data, not functional.</desc>
+<rect x="0" y="0" width="390" height="844" rx="0" fill="#F4F6F9"/>
+<text x="24" y="34" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="700" fill="#11131A" text-anchor="start">9:41</text>
+<text x="366" y="34" font-family="DejaVu Sans, sans-serif" font-size="13" font-weight="400" fill="#475569" text-anchor="end">Bluetooth</text>
+<path d="M24 48L366 48" fill="none" stroke="#64748B" stroke-width="1" stroke-linecap="round"/>
+<text x="24" y="88" font-family="DejaVu Sans, sans-serif" font-size="28" font-weight="700" fill="#11131A" text-anchor="start">Touchpad</text>
+<text x="24" y="118" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="400" fill="#475569" text-anchor="start">Ready • pointer mode</text>
+<rect x="24" y="158" width="342" height="288" rx="20" fill="#FFFFFF"/>
+<path transform="translate(173.0 246) scale(1.8333333333333333)" d="M4 3L20 13L12 15L9 22Z" fill="none" stroke="#174A82" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="195.0" y="318" font-family="DejaVu Sans, sans-serif" font-size="18" font-weight="700" fill="#11131A" text-anchor="middle">Swipe to move</text>
+<text x="195.0" y="347" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="middle">Tap to click</text>
+<rect x="24" y="462" width="165.0" height="48" rx="12" fill="#174A82"/>
+<text x="106.5" y="491.44" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#FFFFFF" text-anchor="middle">Pointer</text>
+<rect x="201.0" y="462" width="165.0" height="48" rx="12" fill="#E4E9F0"/>
+<text x="283.5" y="491.44" font-family="DejaVu Sans, sans-serif" font-size="16" font-weight="700" fill="#11131A" text-anchor="middle">Scroll</text>
+<rect x="24" y="526" width="342" height="52" rx="12" fill="#E4E9F0"/>
+<text x="195.0" y="557.78" font-family="DejaVu Sans, sans-serif" font-size="17" font-weight="700" fill="#11131A" text-anchor="middle">Switch to D-pad</text>
+<text x="24" y="600" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">Accessible directional controls are available in</text>
+<text x="24" y="620" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="start">D-pad mode.</text>
+<path d="M24 760L366 760" fill="none" stroke="#64748B" stroke-width="1" stroke-linecap="round"/>
+<text x="56" y="793" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="700" fill="#174A82" text-anchor="middle">Remote</text>
+<text x="195.0" y="793" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="middle">Devices</text>
+<text x="334" y="793" font-family="DejaVu Sans, sans-serif" font-size="14" font-weight="400" fill="#475569" text-anchor="middle">Help</text>
+</svg>

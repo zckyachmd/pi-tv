@@ -8,7 +8,7 @@
 - Environment: `rust:1.100.0-slim-bookworm` pinned by digest, Linux ARM64, Debian 12 bookworm repositories.
 - Command: `scripts/phase0b/package-feasibility.sh`.
 - Duration: 110 seconds.
-- Sanitized raw plans: [`evidence/phase0b/package-sim/`](evidence/phase0b/package-sim/); run metadata is in `metadata.json`.
+- Sanitized raw plans: [`evidence/phase0b/package-sim/`](../../../evidence/phase0b/package-sim); run metadata is in `metadata.json`.
 - No package install command was executed; `apt-get -s` and `dpkg-deb --build` were used in the throwaway container.
 
 ## Resolver results

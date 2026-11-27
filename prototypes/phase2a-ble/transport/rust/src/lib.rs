@@ -37,6 +37,13 @@ impl Sender {
         Ok(result)
     }
 }
+fn canonical_peer(peer: &str) -> bool {
+    let b = peer.as_bytes();
+    b.len() == 36 && b.iter().enumerate().all(|(i, c)| {
+        if [8, 13, 18, 23].contains(&i) { *c == b'-' }
+        else { c.is_ascii_digit() || (b'A'..=b'F').contains(c) }
+    })
+}
 struct Pending { count: usize, len: usize, next: usize, start: u64, data: Vec<u8> }
 #[derive(Default)]
 struct Peer { failed: bool, pending: HashMap<u32, Pending>, last_id: u32 }
@@ -47,7 +54,7 @@ impl Receiver {
     pub fn reset(&mut self, peer: &str) { if let Some(p) = self.peers.remove(peer) { self.reserved -= p.pending.values().map(|x| x.len).sum::<usize>(); } }
     pub fn receive(&mut self, peer: &str, frame: &[u8], capacity: usize, now_ms: u64) -> Result<Option<Vec<u8>>, Error> {
         if self.failed || self.peers.get(peer).is_some_and(|p| p.failed) { return Err(Error::State); }
-        if peer.is_empty() || peer.len() > 64 || (!self.peers.contains_key(peer) && self.peers.len() >= 32) { self.failed = true; return Err(Error::Resource); }
+        if !canonical_peer(peer) || (!self.peers.contains_key(peer) && self.peers.len() >= 32) { self.failed = true; return Err(Error::Resource); }
         let result = self.accept(peer, frame, capacity, now_ms);
         if result.is_err() { self.reset(peer); self.peers.entry(peer.to_string()).or_default().failed = true; }
         result
@@ -76,7 +83,7 @@ impl Receiver {
         if index == 0 && ((left == 0 && after_first != 0) || (left > 0 && (after_first < left || after_first > left.saturating_mul(capacity - HEADER)))) { return Err(Error::Invalid); }
         let p = self.peers.entry(peer.to_string()).or_default();
         if !p.pending.contains_key(&id) {
-            if index != 0 || id <= p.last_id { return Err(Error::Sequence); }
+            if index != 0 || p.last_id.checked_add(1) != Some(id) { return Err(Error::Sequence); }
             if p.pending.len() >= 2 || p.pending.values().map(|x| x.len).sum::<usize>() + len > PEER_BUDGET || self.reserved + len > GLOBAL_BUDGET { return Err(Error::Resource); }
             p.last_id = id; self.reserved += len;
             p.pending.insert(id, Pending { count, len, next: 0, start: now, data: Vec::with_capacity(len) });
@@ -88,7 +95,7 @@ impl Receiver {
         let fragments_left = count - index - 1;
         if (fragments_left == 0 && after != 0) || (fragments_left > 0 && (after < fragments_left || after > fragments_left.saturating_mul(capacity - HEADER))) { return Err(Error::Invalid); }
         x.data.extend_from_slice(payload); x.next += 1;
-        if x.next == count { let done = p.pending.remove(&id).unwrap(); self.reserved -= done.len; return Ok(Some(done.data)); }
+        if x.next == count { if p.pending.keys().any(|other| *other < id) { return Err(Error::Sequence); } let done = p.pending.remove(&id).unwrap(); self.reserved -= done.len; return Ok(Some(done.data)); }
         Ok(None)
     }
 }
@@ -106,7 +113,7 @@ mod tests {
     "encode" => { let mut s=Sender::with_next(p[5].parse().unwrap()); let result=s.fragment(&vec![p[4].parse().unwrap();p[3].parse().unwrap()],p[2].parse().unwrap()); match result { Ok(frames)=>assert_eq!(frames,p[6].split('/').map(hex).collect::<Vec<_>>(),"{}",p[1]), Err(e)=>assert_eq!(name(e),p[6],"{}",p[1]) } },
     "receive" => { let result=receiver.receive(p[2],&hex(p[5]),p[3].parse().unwrap(),p[4].parse().unwrap()); match result { Ok(None)=>assert_eq!(p[6],"pending","{}",p[1]), Ok(Some(data))=>assert_eq!(data,hex(p[6].strip_prefix("done:").unwrap()),"{}",p[1]), Err(e)=>assert_eq!(name(e),p[6],"{}",p[1]) } },
     "expire" => { let result=receiver.expire(p[2],p[3].parse().unwrap()); assert_eq!(result.err().map(name).unwrap_or("ok"),p[4],"{}",p[1]); },
-    "reset" => receiver.reset(p[2]), _=>panic!("unknown fixture")
+    "reset" => receiver.reset(p[2]), "resetall" => receiver.reset_all(), _=>panic!("unknown fixture")
    }
   }
   println!("{count} shared fixture operations");

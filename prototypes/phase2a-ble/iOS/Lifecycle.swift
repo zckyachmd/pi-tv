@@ -52,3 +52,21 @@ struct EchoRequest {
     mutating func cancel() { if outcome == nil { outcome = .cancelled } }
     private mutating func complete() { if acknowledged && echoAt != nil { outcome = .success } }
 }
+
+struct Requests {
+    private(set) var active: EchoRequest?
+    private(set) var last: EchoRequest?
+    mutating func admit(_ request: EchoRequest, ready: Bool) -> Bool {
+        guard ready, active == nil else { return false }
+        active = request
+        return true
+    }
+    mutating func update(_ body: (inout EchoRequest) -> Void) -> EchoRequest.Outcome? {
+        guard var request = active else { return nil }
+        body(&request)
+        if let outcome = request.outcome { last = request; active = nil; return outcome }
+        active = request
+        return nil
+    }
+    mutating func clear() { _ = update { $0.cancel() } }
+}

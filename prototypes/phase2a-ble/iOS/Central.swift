@@ -14,7 +14,12 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
     private var rx: CBCharacteristic?
     private var sequence: UInt64 = 0
     private var lifecycle = Lifecycle()
-    private var request: EchoRequest?
+    private var requests = Requests()
+    private var transport = RecordTransport()
+    private var writeOutstanding = false
+    @Published var payloadSize = 64
+    private var peerID: String { peripheral?.identifier.uuidString ?? "" }
+    private var milliseconds: UInt64 { UInt64(ProcessInfo.processInfo.systemUptime * 1000) }
     @Published var requestStatus = "No request"
     private var timer: Timer?
     private func transition(_ state: Lifecycle.State, timeout: TimeInterval? = nil) -> Bool {
@@ -22,7 +27,7 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
         status = state.rawValue; ready = state == .ready; return true
     }
     private func fail(_ reason: String) {
-        request?.cancel(); updateRequest()
+        requests.clear(); updateRequest()
         status = reason
         guard let peripheral else { _ = transition(.failed); status = reason; return }
         guard lifecycle.state != .disconnecting && lifecycle.state != .failed else { return }
@@ -31,14 +36,20 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
         manager.cancelPeripheralConnection(peripheral)
     }
     private func checkDeadlines() {
+        if lifecycle.state == .ready {
+            do { try transport.expire(peerID, now: milliseconds) }
+            catch { fail("Fragment expiry: \(error)"); return }
+        }
         if lifecycle.expired() {
             if lifecycle.state == .disconnecting {
                 lifecycle.expireDisconnect(); ready = false; status = "Disconnect confirmation timed out; recovery required"
             } else { fail("Transport timeout: \(lifecycle.state.rawValue)") }
             return
         }
-        request?.expire(ProcessInfo.processInfo.systemUptime)
-        if let outcome = request?.outcome, outcome == .acknowledgementTimeout || outcome == .echoTimeout { fail(outcome.rawValue) }
+        if let outcome = requests.update({ $0.expire(ProcessInfo.processInfo.systemUptime) }) {
+            updateRequest()
+            if outcome == .acknowledgementTimeout || outcome == .echoTimeout { fail(outcome.rawValue) }
+        }
     }
     private func active(_ candidate: CBPeripheral, _ state: Lifecycle.State) -> Bool {
         peripheral === candidate && lifecycle.state == state
@@ -47,7 +58,7 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
     private func log(_ message: String) { events = message + "\n" + String(events.prefix(4000)) }
     func centralManagerDidUpdateState(_ central: CBCentralManager) {
         guard lifecycle.state != .failed else { return }
-        guard central.state == .poweredOn else { request?.cancel(); clear(); _ = transition(.unavailable); return }
+        guard central.state == .poweredOn else { requests.clear(); clear(); _ = transition(.unavailable); return }
         _ = transition(.idle); scan()
     }
     func scan() {
@@ -68,10 +79,10 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
         peripheral.discoverServices([serviceID])
     }
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
-        guard active(peripheral, .connecting) else { return }; fail("Connection failed")
+        guard active(peripheral, .connecting) else { return }; clear(); _ = transition(.disconnected); status = "Connection failed"
     }
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        guard self.peripheral === peripheral else { return }; request?.cancel(); requestStatus = request?.outcome?.rawValue ?? "Disconnected"; clear(); _ = transition(.disconnected)
+        guard self.peripheral === peripheral else { return }; requests.clear(); updateRequest(); clear(); _ = transition(.disconnected)
     }
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard active(peripheral, .services) else { return }
@@ -87,46 +98,67 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
         guard transition(.subscribing, timeout: 10) else { return }; peripheral.setNotifyValue(true, for: tx)
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateNotificationStateFor characteristic: CBCharacteristic, error: Error?) {
-        guard active(peripheral, .subscribing), characteristic.uuid == txID else { return }
+        guard self.peripheral === peripheral, characteristic.uuid == txID else { return }
+        if lifecycle.state == .ready {
+            if error != nil || !characteristic.isNotifying { fail("Subscription lost") }
+            return
+        }
+        guard lifecycle.state == .subscribing else { return }
         guard error == nil, characteristic.isNotifying else { fail("Subscription failed"); return }
         _ = transition(.ready)
     }
     func send() {
-        guard lifecycle.canSend, request == nil || request?.outcome == .success, let peripheral, let rx, sequence < .max else { return }
+        guard lifecycle.canSend, requests.active == nil, let peripheral, let rx, sequence < .max else { return }
         sequence += 1
-        let data = Data("echo \(sequence)".utf8)
-        guard data.count <= peripheral.maximumWriteValueLength(for: .withResponse) else { return }
+        let data = Data((0..<payloadSize).map { UInt8(truncatingIfNeeded: $0 + Int(sequence % 256)) })
         let now = ProcessInfo.processInfo.systemUptime
-        request = EchoRequest(id: sequence, generation: lifecycle.generation, payload: data, sent: now, deadline: now + 10)
-        requestStatus = "Waiting for acknowledgement and echo"
-        peripheral.writeValue(data, for: rx, type: .withResponse)
+        guard requests.admit(EchoRequest(id: sequence, generation: lifecycle.generation, payload: data, sent: now, deadline: now + 30), ready: lifecycle.canSend) else { return }
+        do {
+            try transport.sender.start(Array(data), capacity: min(512, peripheral.maximumWriteValueLength(for: .withResponse)))
+            requestStatus = "Sending fragments"
+            sendNext(peripheral, rx)
+        } catch { fail("Cannot start request: \(error)") }
+    }
+    private func sendNext(_ peripheral: CBPeripheral, _ characteristic: CBCharacteristic) {
+        guard !writeOutstanding, let frame = transport.sender.frame() else { return }
+        writeOutstanding = true
+        peripheral.writeValue(Data(frame), for: characteristic, type: .withResponse)
     }
     func peripheral(_ peripheral: CBPeripheral, didWriteValueFor characteristic: CBCharacteristic, error: Error?) {
         checkDeadlines()
-        guard active(peripheral, .ready), characteristic.uuid == rxID, request?.generation == lifecycle.generation else { return }
-        request?.ack(error: error != nil)
-        updateRequest()
-        if error != nil { fail("Write failed") }
+        guard active(peripheral, .ready), characteristic.uuid == rxID else { return }
+        guard writeOutstanding, requests.active?.generation == lifecycle.generation else { fail("Ambiguous write acknowledgement"); return }
+        writeOutstanding = false
+        guard error == nil else { _ = requests.update { $0.ack(error: true) }; updateRequest(); fail("Write failed"); return }
+        do { try transport.sender.advance() } catch { fail("Invalid write state"); return }
+        if transport.sender.busy { sendNext(peripheral, characteristic) }
+        else { _ = requests.update { $0.ack(error: false) }; updateRequest() }
     }
     func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {
         checkDeadlines()
-        guard active(peripheral, .ready), characteristic.uuid == txID, error == nil, let data = characteristic.value, request?.generation == lifecycle.generation else { return }
-        let message = request?.echo(data, at: ProcessInfo.processInfo.systemUptime) ?? "stale response"
-        log(message); updateRequest()
-        if request?.outcome == .mismatch { fail("Payload mismatch") }
+        guard active(peripheral, .ready), characteristic.uuid == txID else { return }
+        guard error == nil, let data = characteristic.value, requests.active?.generation == lifecycle.generation else { fail("Unexpected or failed notification"); return }
+        do {
+            guard let record = try transport.receive(peerID, Array(data), capacity: 512, now: milliseconds) else { return }
+            var message = "stale response"
+            let outcome = requests.update { message = $0.echo(Data(record), at: ProcessInfo.processInfo.systemUptime) }
+            log(message); updateRequest()
+            if outcome == .mismatch { fail("Payload mismatch") }
+        } catch { fail("Invalid notification: \(error)") }
     }
+
     private func updateRequest() {
-        guard let request else { return }
+        guard let request = requests.active ?? requests.last else { return }
         requestStatus = request.outcome?.rawValue ?? "Waiting"
         if request.outcome == .success, let echo = request.echoAt { requestStatus += String(format: " RTT %.2f ms", (echo - request.sent) * 1000) }
     }
 
     func disconnect() {
         manager.stopScan()
-        request?.cancel(); updateRequest()
+        requests.clear(); updateRequest()
         if let peripheral { guard lifecycle.state != .failed else { return }; _ = transition(.disconnecting, timeout: 10); manager.cancelPeripheralConnection(peripheral) } else { clear(); _ = transition(.disconnected) }
     }
-    private func clear() { ready = false; rx = nil; peripheral = nil }
+    private func clear() { requests.clear(); transport = RecordTransport(); writeOutstanding = false; ready = false; rx = nil; peripheral = nil }
 }
 
 @main struct CentralApp: App {
@@ -140,6 +172,9 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
                 HStack {
                     Button("Scan", action: central.scan)
                     Button("Disconnect", action: central.disconnect)
+                    Picker("Payload", selection: $central.payloadSize) {
+                        ForEach([64, 256, 1024, 4096], id: \.self) { Text("\($0) bytes").tag($0) }
+                    }
                     Button("Send test", action: central.send).disabled(!central.ready)
                 }
                 ScrollView { Text(central.events).frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled) }

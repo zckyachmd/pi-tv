@@ -26,6 +26,10 @@ final class FragmentSender {
 }
 private func bytes(_ value: UInt32, _ count: Int) -> [UInt8] { (0..<count).reversed().map { UInt8(truncatingIfNeeded: value >> ($0 * 8)) } }
 private func number(_ data: ArraySlice<UInt8>) -> UInt32 { data.reduce(0) { ($0 << 8) | UInt32($1) } }
+private func canonicalPeer(_ peer: String) -> Bool {
+    guard peer.utf8.count == 36, let uuid = UUID(uuidString: peer) else { return false }
+    return uuid.uuidString == peer
+}
 private struct Pending { let count: Int, length: Int, start: UInt64; var next = 0; var data: [UInt8] = [] }
 private struct Peer { var failed = false; var pending: [UInt32: Pending] = [:]; var lastID: UInt32 = 0 }
 final class FragmentReceiver {
@@ -44,7 +48,7 @@ final class FragmentReceiver {
     }
     func receive(_ peer: String, _ f: [UInt8], capacity: Int, now: UInt64) throws -> [UInt8]? {
         if failed || peers[peer]?.failed == true { throw FragmentError.state }
-        if peer.isEmpty || peer.utf8.count > 64 || (peers[peer] == nil && peers.count >= 32) { failed = true; throw FragmentError.resource }
+        if !canonicalPeer(peer) || (peers[peer] == nil && peers.count >= 32) { failed = true; throw FragmentError.resource }
         do { return try accept(peer, f, capacity: capacity, now: now) }
         catch { reset(peer); peers[peer] = Peer(failed: true); throw error }
     }
@@ -59,7 +63,7 @@ final class FragmentReceiver {
         if index == 0 { guard (initialLeft == 0 && initialAfter == 0) || (initialLeft > 0 && initialAfter >= initialLeft && initialAfter <= initialLeft * min(capacity - fragmentHeader, maxMessage)) else { throw FragmentError.invalid } }
         var p = peers[peer] ?? Peer()
         if p.pending[id] == nil {
-            guard index == 0, id > p.lastID else { throw FragmentError.sequence }
+            guard index == 0, p.lastID != .max, id == p.lastID + 1 else { throw FragmentError.sequence }
             guard p.pending.count < 2, p.pending.values.reduce(0, { $0 + $1.length }) + length <= peerBudget, reserved + length <= globalBudget else { throw FragmentError.resource }
             p.lastID = id; reserved += length
             p.pending[id] = Pending(count: count, length: length, start: now)
@@ -72,7 +76,66 @@ final class FragmentReceiver {
         let after = remaining - payload.count, left = count - index - 1
         guard (left == 0 && after == 0) || (left > 0 && after >= left && after <= left * min(capacity - fragmentHeader, maxMessage)) else { throw FragmentError.invalid }
         x.data.append(contentsOf: payload); x.next += 1
-        if x.next == count { p.pending.removeValue(forKey: id); reserved -= length; peers[peer] = p; return x.data }
+        if x.next == count { guard !p.pending.keys.contains(where: { $0 < id }) else { throw FragmentError.sequence }; p.pending.removeValue(forKey: id); reserved -= length; peers[peer] = p; return x.data }
         p.pending[id] = x; peers[peer] = p; return nil
+    }
+}
+
+// One bounded outbound record; only the current frame is materialized.
+final class FragmentCursor {
+    private var nextID: UInt32 = 1
+    private var data: [UInt8] = []
+    private var capacity = 0
+    private var index = 0
+    private var count = 0
+    private var id: UInt32 = 0
+    var busy: Bool { !data.isEmpty }
+    func start(_ payload: [UInt8], capacity: Int) throws {
+        guard !busy else { throw FragmentError.resource }
+        guard capacity > fragmentHeader else { throw FragmentError.config }
+        guard !payload.isEmpty && payload.count <= maxMessage else { throw FragmentError.invalid }
+        guard nextID != 0 else { throw FragmentError.exhausted }
+        self.data = payload; self.capacity = capacity; index = 0
+        count = 1 + (payload.count - 1) / (capacity - fragmentHeader)
+        guard count <= Int(UInt16.max) else { data = []; throw FragmentError.invalid }
+        id = nextID; nextID = nextID == .max ? 0 : nextID + 1
+    }
+    func frame() -> [UInt8]? {
+        guard busy else { return nil }
+        let start = index * (capacity - fragmentHeader)
+        let end = min(data.count, start + capacity - fragmentHeader)
+        return [1] + bytes(id, 4) + bytes(UInt32(index), 2) + bytes(UInt32(count), 2) + bytes(UInt32(data.count), 4) + data[start..<end]
+    }
+    func advance() throws {
+        guard busy else { throw FragmentError.state }
+        index += 1
+        if index == count { data = [] }
+    }
+    func notificationResult(_ accepted: Bool) throws {
+        if accepted { try advance() }
+    }
+}
+
+final class RecordTransport {
+    let sender = FragmentCursor()
+    private let receiver = FragmentReceiver()
+    private var incomingID: UInt32?
+    private(set) var failed = false
+    func invalidate() { failed = true }
+    func receive(_ peer: String, _ frame: [UInt8], capacity: Int, now: UInt64) throws -> [UInt8]? {
+        guard !failed else { throw FragmentError.state }
+        do {
+            guard frame.count >= fragmentHeader else { throw FragmentError.invalid }
+            let id = number(frame[1..<5])
+            guard incomingID == nil || incomingID == id else { throw FragmentError.sequence }
+            incomingID = id
+            let record = try receiver.receive(peer, frame, capacity: capacity, now: now)
+            if record != nil { incomingID = nil }
+            return record
+        } catch { failed = true; throw error }
+    }
+    func expire(_ peer: String, now: UInt64) throws {
+        guard !failed else { throw FragmentError.state }
+        do { try receiver.expire(peer, now: now) } catch { failed = true; throw error }
     }
 }

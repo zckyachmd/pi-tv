@@ -17,6 +17,7 @@ for line in lines {
     case "expire":
         do { try receiver.expire(p[2], now: UInt64(p[3])!); precondition(p[4] == "ok", p[1]) } catch { precondition(errorName(error) == p[4], p[1]) }
     case "reset": receiver.reset(p[2])
+    case "resetall": receiver.resetAll()
     default: fatalError("unknown fixture")
     }
 }

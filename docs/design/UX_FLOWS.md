@@ -10,7 +10,8 @@ flowchart LR
  B --> C[IOS-03 Scan] --> D[IOS-04 Authenticate]
  D --> E[TV-05 Await local confirmation]
  E -->|approved local confirmation and durable commit| F[IOS-05 Select device]
- E -->|reject, expiry or uncertain commit| B
+ E -->|reject, expiry or uncertain commit| G[Enrollment closed; renewal required]
+ G -->|approved renewal ceremony| B
 ```
 
 The QR is one-use and expires; display is not authorization. Authenticate the intended identity, bind enrollment to the session, and show success only after commit. If no approved local path exists, explain the blocker; do not substitute an unauthenticated phone.
@@ -106,11 +107,15 @@ Reset revokes controller credentials and rotates device identity. Settings and p
 
 ```mermaid
 flowchart LR
- A[TV-02 Catalog] -->|launch| B[TV-03 Loading]
+ A[TV-02 Catalog] -->|launch available app| B[TV-03 Loading]
+ A -->|enabled details action for unavailable app| D[TV-09 Explanation]
  B -->|success| C[Foreground runtime]
  B -->|unsupported/unavailable| D[TV-09 Explanation] --> A
  C -->|browser failure| E[TV-10 Recovery]
- E -->|diagnostics| F[TV-08 Diagnostics] --> E
+ E -->|diagnostics| F[TV-08 Diagnostics]
+ F -->|Back restores origin and focus| E
+ S[TV-07 Settings] -->|diagnostics| F
+ F -->|Back restores origin and focus| S
  E -->|safe retry| B
  E -->|Home| A
 ```

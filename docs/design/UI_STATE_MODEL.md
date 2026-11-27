@@ -16,6 +16,7 @@ Proposed, 2026-11-27. This is a presentation vocabulary, not a wire protocol. Th
 | Reconnecting | Show progress; authenticate again and obtain a snapshot before controls are enabled. |
 | Revoked | Explain that fresh enrollment is required; do not silently retry credentials. |
 | Stale or unknown application state | Label state unknown and request a fresh snapshot; do not present cached state as current. |
+| Busy | Active-controller contention prevents the affected control; explain it and offer retry when available without adding a screen group. |
 | Unsupported capability | Explain unavailable action; never infer support from provider identity. |
 | Command accepted | Queued for processing, not completed. |
 | Command applied | Confirm only the documented adapter boundary, not provider playback. |

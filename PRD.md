@@ -32,3 +32,21 @@ P0 is MVP scope; each criterion requires recorded test conditions and results be
 MVP is foreground iOS BLE control and one foreground app. A browser-based mobile remote and Wi-Fi remote are outside MVP; Android, HDMI-CEC, other boards, native media runtimes and appliance images are deferred. No casting, cloud account, arbitrary executable marketplace, unsupported DRM bypass, or universal provider guarantee. Bluetooth radio denial, out-of-range, pairing failure and local recovery must be understandable. No background iOS operation is promised. Internet loss must not prevent local launcher and pairing when their dependencies remain available.
 
 The exact iOS minimum, OS image, browser/compositor, crypto suite, handshake, GATT UUIDs, queue sizes and numerical performance budgets require feasibility and owner review. Existing LAN, Bonjour and WSS prototype behavior is historical; it is not the MVP transport. See [system design](docs/architecture/SYSTEM_DESIGN.md), [protocol](docs/architecture/BLE_PROTOCOL.md), [threat model](docs/architecture/THREAT_MODEL.md), [ADRs](docs/architecture/adr/README.md), and [risks](docs/architecture/RISK_REGISTER.md).
+
+## Preserved requirements and pending acceptance decisions
+
+The following are active proposals, not measurements or ratified limits. See [traceability](docs/architecture/TRACEABILITY.md) for individual historical dispositions and [benchmark specification](docs/architecture/BENCHMARKS.md) for measurement gates.
+
+| ID | Requirement |
+|---|---|
+| R-15 | Evaluate YouTube, Netflix, Spotify and Jellyfin as reference applications with lawful accounts on target hardware. Publish each result and limitations; proposed release minimum is two distinct validated services including video, subject to owner approval if a reference service is unsupported. |
+| R-16 | Propose stable 720p30 minimum and 1080p30 target on a validated video path; output resolution does not prove playback resolution. Report observability and dropped frames. |
+| R-17 | Propose idle core PSS ≤20 MiB and initial launcher JavaScript ≤200 KiB compressed. Propose ≤10% regression in core memory, CPU and latency against a validated comparable baseline, or reviewed ADR and new baseline; hard gates still apply. |
+| R-18 | Propose 2-hour provider trials, an integrated 24-hour soak including reconnect and switching, and a 72-hour release reliability run on the actual Pi. |
+| R-19 | Design for accessibility and localization readiness, including screen-reader semantics, focus, contrast, reduced motion and externalizable text; define platform-specific acceptance before release. |
+| R-20 | Recover HDMI disconnect/reconnect and display actionable local recovery. Normal operation must not require a keyboard; initial provisioning or recovery may require a trusted local keyboard pending approval. |
+| R-21 | Before public distribution, validate signed APT Release metadata with a scoped keyring and document rollback using a compatible prior package and configuration backup; test interrupted upgrades and restore. APT rollback is not automatic. |
+| R-22 | Govern dependencies through reviewed admission, pinned toolchains and lockfiles, license and vulnerability review, maintained update paths and release notices/SBOM; exceptions require owner review. |
+| R-23 | Support multiple saved trusted device identities, explicit device selection and revocation, credential storage and replacement/reset recovery. Identity rotation and migration require a reviewed design; no credential or profile deletion on ordinary upgrade. |
+
+Custom user-supplied apps, browser remote, Android, additional boards, native media, background audio, image distribution and HDMI-CEC are deferred. TestFlight/App Store distribution is conditional on licensing and platform review. First-boot alternatives and their approval gate are specified in [recovery](docs/architecture/RECOVERY.md). Older LAN latency, Bonjour, WSS and shared-LAN requirements are superseded, not restored.

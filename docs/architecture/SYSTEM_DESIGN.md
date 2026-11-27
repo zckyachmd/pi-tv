@@ -67,3 +67,9 @@ sequenceDiagram
 ## Proposed repository
 
 Create only when production is authorized: `crates/protocol`, `crates/core`, `crates/daemon` (adapter modules); `apps/tv-launcher`, `apps/ios-remote`; `contracts` for canonical schema and fixtures; `packaging`, `tests`, `docs`, `evidence`. Existing `prototypes/` remain disposable historical research. Do not create empty crates or copy prototype security into production. Dependencies, lockfiles, licenses, toolchain and resource overhead require review before selection.
+
+## Ownership and boundaries
+
+BLE framing, secure channel, application session and transport-independent commands are separate layers as specified in [protocol](BLE_PROTOCOL.md). The session owns authenticated peer identity and authorization; core owns authoritative desired app state, revisions and admission; runtime adapters report observed outcomes, never manufacture playback state. The trust store owns durable device identities; the browser owns its isolated provider profile; neither is a UI cache. The trusted local provisioning and recovery path is specified in [recovery](RECOVERY.md).
+
+The proposed repository layout above is a planning map, not a mandate to create crates. [Module boundaries](MODULE_BOUNDARIES.md) owns dependency direction, interfaces, errors and tests. Decisions on schema, IPC, persistence, resources and platform dependencies remain in the [ADR index](adr/README.md).

@@ -1,0 +1,13 @@
+# Dependency resolution checkpoint — 2026-11-27
+
+Base revision: `67cd0b55ec343f07f9fb4a5b8466ea023fb3aac6`. This is an incomplete admission review; do not compile the experiment on the basis of this checkpoint.
+
+`cargo generate-lockfile --manifest-path prototypes/phase2b-tls/rust/Cargo.toml` resolved 25 registry packages. `cargo metadata --format-version 1` supplied the names, versions, registry sources and declared licenses in `cargo-inventory.json`; checksums are in the Cargo.lock. Registry checksums identify archives, not upstream git revisions; the latter have not been recorded. An OSV querybatch for every resolved Cargo package and exact version returned no matching IDs on 2026-11-27; this is not a complete upstream/native advisory review.
+
+`swift package resolve` in `prototypes/phase2b-tls/swift` succeeded. Package.resolved records five packages and their exact Git revisions. The resolved graph did not include swift-certificates. The SSL manifest identifies the vendored BoringSSL upstream revision as `8eb25be6fa18d475291122887a7bccd3762ff236`; its vendored modifications and native C/C++/assembly license notices require further inspection. Ring 0.17.14 contains native code, and its declared license is Apache-2.0 AND ISC; inspect its bundled notices and provenance. The Swift checkouts each contain a LICENSE.txt; swift-nio and swift-nio-ssl also have NOTICE.txt. License compatibility and full nested license inventory are not yet established.
+
+GitHub repository advisory listings for swift-nio-ssl and swift-nio were consulted. NIO SSL GHSA-xfxg-9975-pc2j affects 2.18.0 through 2.37.1; resolved 2.37.8 is outside the range. NIO's listed advisories affected versions at or below 2.100.0, while 2.105.2 is resolved. Empty repository advisory listings for the other three Swift packages are not a complete transitive or BoringSSL vulnerability review. The [rustls security policy](https://github.com/rustls/rustls/security) describes a two-year window based on the original semver-compatible release; 0.23.0 was published in February 2024, while 0.23 remains the current stable line. Its future security-support status needs clarification.
+
+Host tools: rustc/cargo 1.100.0, Apple Swift 6.4.2, Xcode 27.2, OpenSSL 4.1.0. No build or tests were run in this checkpoint.
+
+NIOSSL 2.37.8 source exposes `NIOSSLHandler.peerCertificate` and synchronous `nioSSL_peerCertificate()`. `completeHandshake` emits the handshake event before decoding buffered reads and unbuffering writes. Whether a gate can safely prevent both inbound and outbound plaintext under every event ordering remains untested.

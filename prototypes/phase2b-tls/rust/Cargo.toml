@@ -1,0 +1,8 @@
+[package]
+name = "phase2b-tls-server"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+rustls = { version = "=0.23.46", default-features = false, features = ["std", "ring"] }

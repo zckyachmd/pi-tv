@@ -58,3 +58,31 @@ Verification from repository root (all exit 0):
 - `xcodebuild -quiet -project prototypes/phase2a-ble/Phase2A.xcodeproj -scheme Central -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build`
 
 These are synthetic model tests and unsigned builds, not physical observations. Physical lifecycle and multi-peer verification remains outstanding; Session 2B remains locked.
+
+### Independent review of `4ce32a0be48a506724872b90d266d909488f0832`
+
+BLE-01 and BLE-02: accepted by static review. BLE-03 and BLE-04: partially validated; the prior follow-up does not establish correct application lifecycle integration. Outstanding findings:
+
+- **BLE-07:** `Central.clear()` retains the active `EchoRequest`; unsuccessful terminal requests can prevent sends after reconnect.
+- **BLE-08:** `checkDeadlines()` repeatedly processes old terminal timeout outcomes and can invalidate disconnected or newer connections.
+- **BLE-09:** reconnect tests construct a request directly and bypass application admission and cleanup.
+- **BLE-10:** notification subscription loss while ready is ignored.
+- **BLE-11:** confirmed connection establishment failure takes an inappropriate disconnect-wait path.
+- **BLE-12:** the active README and this completion summary require reconciliation with existing physical evidence.
+
+BLE-07 through BLE-11 must be corrected and regression-tested before fragmentation is integrated into either application in Session 2A.3.4. They do not block the independent Rust–Swift model. Preserve the historical observations above; Session 2B remains locked.
+
+## Session 2A.3.3 — independent fragmentation model (2026-11-27)
+
+Implemented isolated Rust and Swift models and a directly shared, dependency-free fixture corpus under `prototypes/phase2a-ble/transport/`. No CoreBluetooth integration was attempted. The 13-byte version-1 header is version (1 byte), message ID (4), fragment index (2), count (2), logical length (4), followed by payload; multibyte values are big-endian. The exact policy, terminal errors, reset requirements and layout are in the transport README. It is experimental, not a ratified production protocol.
+
+The maximum logical message is 4096 bytes; each peer may reserve two messages and 8192 declared payload bytes, with a 16384-byte global reservation budget. These values allow two maximum messages per peer and four globally. They bound declared payload reservations, not all process heap overhead. Peer metadata is bounded to 32 entries and 64 UTF-8 bytes per identifier. The caller must provide actual fragment capacity, monotonic milliseconds and expiry polling. Tests do not establish physical BLE behavior or authentication.
+
+Commands from the repository root and final exit codes:
+
+- `cargo test --manifest-path prototypes/phase2a-ble/transport/rust/Cargo.toml -- --nocapture` — exit 0; 2 Rust tests, including 50 shared fixture operations and counter exhaustion.
+- `swiftc prototypes/phase2a-ble/transport/swift/Fragment.swift prototypes/phase2a-ble/transport/swift/main.swift -o /tmp/pi-tv-fragment-tests && /tmp/pi-tv-fragment-tests prototypes/phase2a-ble/transport/fixtures/cases.txt` — exit 0; 50 shared fixture operations and counter exhaustion.
+- `swiftc prototypes/phase2a-ble/iOS/Lifecycle.swift prototypes/phase2a-ble/tests/lifecycle/main.swift -o /tmp/pi-tv-lifecycle-tests/run && /tmp/pi-tv-lifecycle-tests/run` — exit 0; existing lifecycle and echo regression assertions.
+- `swiftc prototypes/phase2a-ble/Mac/PeerQueue.swift prototypes/phase2a-ble/tests/main.swift -o /tmp/pi-tv-peerqueue-tests && /tmp/pi-tv-peerqueue-tests` — exit 0; existing queue regression assertions.
+
+Both implementations matched the same expected encoded bytes and decode outcomes in the shared corpus, including minimum capacity, maximum size, invalid frames, ordering, expiry, budgets and disconnect cleanup. An initial corpus run failed because the global budget remained intentionally full before a later reset case; the fixture now releases it and both final runs pass. BLE-07 through BLE-11 remain prerequisites for application integration, and BLE-12 remains open. No hardware, signed builds or physical tests were performed in this checkpoint.

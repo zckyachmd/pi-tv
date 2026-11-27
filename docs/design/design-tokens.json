@@ -1,13 +1,103 @@
 {
-  "version": "0.1.0-proposed",
-  "color": {
-    "dark": {"background":"#11131A","surface":"#202630","surfaceRaised":"#2A3443","foreground":"#F4F5F7","mutedForeground":"#B3BDCA","border":"#687586","primary":"#9ED0FF","primaryForeground":"#11131A","focus":"#9ED0FF","success":"#86E0AA","warning":"#FFD18A","danger":"#FF9A9A"},
-    "light": {"background":"#F4F6F9","surface":"#FFFFFF","surfaceRaised":"#E4E9F0","foreground":"#11131A","mutedForeground":"#475569","border":"#64748B","primary":"#174A82","primaryForeground":"#FFFFFF","focus":"#174A82","success":"#166534","warning":"#854D0E","danger":"#991B1B"}
+  "version": "1.0.0-proposed",
+  "spacing": {
+    "xs": 4,
+    "sm": 8,
+    "md": 16,
+    "lg": 24,
+    "xl": 32,
+    "2xl": 48,
+    "3xl": 64
   },
-  "spacing": {"xs":4,"sm":8,"md":16,"lg":24,"xl":32,"2xl":48,"3xl":64},
-  "radius": {"sm":6,"md":12,"lg":18,"xl":24},
-  "motion": {"fastMs":120,"normalMs":180,"reducedMs":0},
-  "tv": {"titlePx":48,"sectionPx":32,"bodyPx":24,"metaPx":20,"focusWidthPx":4,"safeMarginPercent":5,"referenceWidth":1920,"referenceHeight":1080},
-  "ios": {"minimumHitTargetPt":44,"dynamicType":true,"font":"system"},
-  "notes": "Candidate semantic seed only; test actual contrast, layout, color perception and native accessibility before approval. No provider brand colors baked into core."
+  "radius": {
+    "sm": 6,
+    "md": 12,
+    "lg": 18,
+    "xl": 24
+  },
+  "motion": {
+    "fastMs": 120,
+    "normalMs": 180,
+    "reducedMs": 0
+  },
+  "tv": {
+    "titlePx": 48,
+    "sectionPx": 32,
+    "bodyPx": 24,
+    "metaPx": 20,
+    "focusWidthPx": 4,
+    "safeMarginPercent": 5,
+    "referenceWidth": 1920,
+    "referenceHeight": 1080
+  },
+  "ios": {
+    "minimumHitTargetPt": 44,
+    "dynamicType": true,
+    "font": "system"
+  },
+  "primitives": {
+    "color": {
+      "11131a": "#11131A",
+      "202630": "#202630",
+      "2a3443": "#2A3443",
+      "f4f5f7": "#F4F5F7",
+      "b3bdca": "#B3BDCA",
+      "687586": "#687586",
+      "9ed0ff": "#9ED0FF",
+      "86e0aa": "#86E0AA",
+      "ffd18a": "#FFD18A",
+      "ff9a9a": "#FF9A9A",
+      "f4f6f9": "#F4F6F9",
+      "ffffff": "#FFFFFF",
+      "e4e9f0": "#E4E9F0",
+      "475569": "#475569",
+      "64748b": "#64748B",
+      "174a82": "#174A82",
+      "166534": "#166534",
+      "854d0e": "#854D0E",
+      "991b1b": "#991B1B"
+    }
+  },
+  "semanticColor": {
+    "dark": {
+      "background": "11131a",
+      "surface": "202630",
+      "surfaceRaised": "2a3443",
+      "foreground": "f4f5f7",
+      "mutedForeground": "b3bdca",
+      "border": "687586",
+      "primary": "9ed0ff",
+      "primaryForeground": "11131a",
+      "focus": "9ed0ff",
+      "success": "86e0aa",
+      "warning": "ffd18a",
+      "danger": "ff9a9a",
+      "info": "9ed0ff",
+      "interactive": "9ed0ff",
+      "interactiveForeground": "11131a",
+      "pressed": "2a3443",
+      "disabledForeground": "b3bdca",
+      "disabledSurface": "202630"
+    },
+    "light": {
+      "background": "f4f6f9",
+      "surface": "ffffff",
+      "surfaceRaised": "e4e9f0",
+      "foreground": "11131a",
+      "mutedForeground": "475569",
+      "border": "64748b",
+      "primary": "174a82",
+      "primaryForeground": "ffffff",
+      "focus": "174a82",
+      "success": "166534",
+      "warning": "854d0e",
+      "danger": "991b1b",
+      "info": "174a82",
+      "interactive": "174a82",
+      "interactiveForeground": "ffffff",
+      "pressed": "e4e9f0",
+      "disabledForeground": "475569",
+      "disabledSurface": "ffffff"
+    }
+  }
 }

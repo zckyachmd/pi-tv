@@ -1,17 +1,17 @@
-# Session 1C.2 — checkpoint
+# Session 1C.2 — design foundation review gate
 
-2026-11-27. **Incomplete; not ready for design review.** Baseline HEAD was `c3dd5b726a970002fb8d2147865dba8e42a583d3`; working tree was clean. No production implementation or hardware work was performed.
+2026-11-27. **Proposed; owner, accessibility, platform and security review required.** Starting HEAD `6e38b68` contains the prior checkpoint, based on reviewed `c3dd5b726a970002fb8d2147865dba8e42a583d3`. The supplied untracked reference pack was preserved. No production implementation was created.
 
-Created a proposed [UI state vocabulary](../design/UI_STATE_MODEL.md) aligned with the protocol and copied the historical candidate token seed to [design tokens](../design/design-tokens.json) as a starting point. The copied file is **not yet a canonical approved token contract**; the handoff remains historical evidence and must not be edited.
+The [design system](../design/DESIGN_SYSTEM.md) links the canonical token contract, platform interactions, component catalog, state model, accessibility and quality gates. The three supplied PNG boards were inspected; their generic visuals inform the direction, not production assets or verified provider support. The seed palette is retained; roles were added through primitive references. The dark border against raised surface is 2.68:1 and restricted to decoration. Board headings and fixed phone layout yield to the seed scale and native accessibility. The ADR index records the proposed contract.
 
-Official sources identified: [Android TV focus](https://developer.android.com/design/ui/tv/guides/styles/focus-system), [TV layouts](https://developer.android.com/design/ui/tv/guides/styles/layouts), [Apple design principles](https://developer.apple.com/design/human-interface-guidelines/design-principles), [shadcn theming](https://ui.shadcn.com/docs/theming), and [WCAG 2.2](https://www.w3.org/TR/WCAG22/). Search results were inspected for Android, Apple and WCAG; shadcn and the full linked pages still need direct verification and documented adoption/rejection decisions.
+## Checks performed
 
-Remaining tasks:
+- `python3 -m json.tool docs/design/design-tokens.json`: PASS.
+- `python3 docs/design/validate_tokens.py`: PASS for required roles, primitive references, 50 declared appearance/pair checks, reduced motion and minimum iOS hit target. Text/status pairs ≥4.5:1 and focus/border pairs ≥3:1; this does not prove actual rendered contrast or cover arbitrary pairings.
+- Python relative Markdown link existence scan across design documents, this report and ADR index: PASS; external URLs and anchors not checked by that scan.
+- Python identifier scan: all 22 candidate components and 16 requested state labels present. This is coverage, not proof of contract quality.
+- Manual comparison with PRD R-19 and BLE protocol: documents cover platform accessibility, localization, authenticated session distinction, accepted/applied/unknown, capability and reconnect semantics; trusted enrollment and recovery remain conditional. No security protocol is selected.
+- `git diff --check`: PASS for tracked diff; new files require separate whitespace inspection. `git diff --name-only -- docs/archive evidence PHASE0C_BENCHMARK_PROTOCOL.md`: empty; the reference pack was already untracked and is preserved.
+- Official Android layout/focus, shadcn theming and WCAG pages accessed; Apple accessibility page required JavaScript, so its full text was unavailable in the fetch. Source list and adopted/rejected principles are in the design system.
 
-1. Read each required input in full and verify all official sources; document visual language, source review dates and rejected patterns.
-2. Reconcile the token seed into one versioned authority with primitive references, complete roles and deterministic platform mappings; add validation and actual pairwise contrast checks.
-3. Complete TV and iOS interaction documents, component contracts and acceptance tests, accessibility and quality gates.
-4. Update the ADR index with the proposed decision and link the design artifacts; resolve no owner security decisions.
-5. Run JSON, references, semantic coverage, contrast, local links, component/state coverage, R-19/protocol alignment, diff and historical-preservation checks; record actual outputs and limitations here.
-
-No visual, runtime accessibility, interoperability or hardware tests were run. The current token seed has not been validated for contrast or completeness.
+No visual regression, runtime accessibility, iOS, physical TV, hardware, performance, protocol interoperability or security tests were run. The 200 KiB compressed JS budget and performance thresholds are prospective. Owner authorization for adding a controller through an existing trusted controller and selection of trusted local recovery remain open. Session 1C.3 wireframes and root governance remain deferred.

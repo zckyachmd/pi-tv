@@ -1,47 +1,73 @@
+func frame(_ payload: [UInt8]) -> [UInt8] {
+    precondition(payload.count <= 4092)
+    let n = UInt32(payload.count)
+    return [UInt8(n >> 24), UInt8((n >> 16) & 255), UInt8((n >> 8) & 255), UInt8(n & 255)] + payload
+}
 func run() throws {
 let dir = CommandLine.arguments[1]
 let port = UInt16(CommandLine.arguments[2])!
 let scenario = CommandLine.arguments.count > 3 ? CommandLine.arguments[3] : "positive"
-func file(_ n: String) throws -> [UInt8] { Array(try Data(contentsOf: URL(fileURLWithPath: dir + "/" + n))) }
+func file(_ n: String) throws -> [UInt8] {
+    let file = try FileHandle(forReadingFrom: URL(fileURLWithPath: dir + "/" + n))
+    defer { try? file.close() }
+    let data = try file.read(upToCount: 65537) ?? Data()
+    guard data.count <= 65536 else { throw Failure("fixture limit") }
+    return Array(data)
+}
 let trustPEM = try file(scenario == "rogue-root" ? "rogue-ca.pem" : "ca.pem"), selectedClientPEM = try file("client.pem"), selectedClientKey = try file("client.key"), serverDER = try file("server.der")
 guard let provider = rustls_ring_crypto_provider() else { throw Failure("provider") }
-defer { rustls_crypto_provider_free(provider) }
+Ownership.record("provider", "acquired")
+defer { rustls_crypto_provider_free(provider); Ownership.record("provider", "freed") }
 guard let rootBuilder = rustls_root_cert_store_builder_new() else { throw Failure("root builder") }
-defer { rustls_root_cert_store_builder_free(rootBuilder) }
+Ownership.record("root-builder", "acquired")
+defer { rustls_root_cert_store_builder_free(rootBuilder); Ownership.record("root-builder", "freed") }
 try check(trustPEM.withUnsafeBufferPointer { rustls_root_cert_store_builder_add_pem(rootBuilder, $0.baseAddress, $0.count, true) }, "root")
 var roots: OpaquePointer?
-try check(rustls_root_cert_store_builder_build(rootBuilder, &roots), "roots")
+let rootsResult = rustls_root_cert_store_builder_build(rootBuilder, &roots)
+Ownership.record("root-builder", "retired")
+try check(rootsResult, "roots")
 guard let roots else { throw Failure("roots") }
-defer { rustls_root_cert_store_free(roots) }
+Ownership.record("root-store", "acquired")
+defer { rustls_root_cert_store_free(roots); Ownership.record("root-store", "freed") }
+Ownership.record("provider", "borrowed"); Ownership.record("root-store", "borrowed")
 guard let verifierBuilder = rustls_web_pki_server_cert_verifier_builder_new_with_provider(provider, roots) else { throw Failure("verifier builder") }
-defer { rustls_web_pki_server_cert_verifier_builder_free(verifierBuilder) }
+Ownership.record("verifier-builder", "acquired")
+defer { rustls_web_pki_server_cert_verifier_builder_free(verifierBuilder); Ownership.record("verifier-builder", "freed") }
 var verifier: OpaquePointer?
-try check(rustls_web_pki_server_cert_verifier_builder_build(verifierBuilder, &verifier), "verifier")
+let verifierResult = rustls_web_pki_server_cert_verifier_builder_build(verifierBuilder, &verifier)
+Ownership.record("verifier-builder", "retired")
+try check(verifierResult, "verifier")
 guard let verifier else { throw Failure("verifier") }
-defer { rustls_server_cert_verifier_free(verifier) }
+Ownership.record("verifier", "acquired")
+defer { rustls_server_cert_verifier_free(verifier); Ownership.record("verifier", "freed") }
 var builder: OpaquePointer?
 var version: UInt16 = scenario == "tls12" ? 0x0303 : 0x0304
 try check(rustls_client_config_builder_new_custom(provider, &version, 1, &builder), "client builder")
 guard let clientBuilder = builder else { throw Failure("builder") }
-defer { if let builder { rustls_client_config_builder_free(builder) } }
+Ownership.record("config-builder", "acquired")
+defer { if let builder { rustls_client_config_builder_free(builder); Ownership.record("config-builder", "freed") } }
+Ownership.record("verifier", "borrowed")
 rustls_client_config_builder_set_server_verifier(clientBuilder, verifier)
 let alpn = Array((scenario == "wrong-alpn" ? "wrong/1" : "pi-tv-experiment/1").utf8)
 try check(alpn.withUnsafeBufferPointer { p in var bytes = rustls_slice_bytes(data: p.baseAddress, len: p.count); return rustls_client_config_builder_set_alpn_protocols(clientBuilder, &bytes, 1) }, "alpn")
 var certified: OpaquePointer?
 try check(selectedClientPEM.withUnsafeBufferPointer { cert in selectedClientKey.withUnsafeBufferPointer { key in rustls_certified_key_build(cert.baseAddress, cert.count, key.baseAddress, key.count, &certified) } }, "client key")
 guard let certified else { throw Failure("key") }
-defer { rustls_certified_key_free(certified) }
+Ownership.record("certified-key", "acquired")
+defer { rustls_certified_key_free(certified); Ownership.record("certified-key", "freed") }
 var keyOpt: OpaquePointer? = certified
-try check(rustls_client_config_builder_set_certified_key(clientBuilder, &keyOpt, 1), "client cert")
+Ownership.record("certified-key", "borrowed"); try check(rustls_client_config_builder_set_certified_key(clientBuilder, &keyOpt, 1), "client cert")
 var config: OpaquePointer?
 let buildResult = rustls_client_config_builder_build(clientBuilder, &config)
-builder = nil // build consumes the builder on success and failure
+builder = nil; Ownership.record("config-builder", "consumed") // build consumes the builder on success and failure
 try check(buildResult, "client config")
 guard let config else { throw Failure("config") }
-defer { rustls_client_config_free(config) }
+Ownership.record("client-config", "acquired")
+defer { rustls_client_config_free(config); Ownership.record("client-config", "freed") }
 let clientOwner = try Client.create(pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER) {
     var raw: OpaquePointer?
-    try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
+    Ownership.record("client-config", "borrowed")
+        try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
     guard let raw else { throw Failure("client") }
     return raw
 }
@@ -68,7 +94,7 @@ let reader: rustls_read_callback = { user, buf, count, read in
     let n = Darwin.recv(fd, buf, count, 0); if n < 0 { return errno }; read!.pointee = n; return 0
 }
 var socketFD = fd
-let parser = FrameDecoder()
+let parser = try FrameDecoder()
 func flush() throws {
     while (try clientOwner.wantsWrite()) {
         var n = 0; let result = (try clientOwner.writeTLS(writer, &socketFD, &n))
@@ -127,11 +153,15 @@ print("PASS swift-client TLS=0x0304 cipher=0x\(String(cipher,radix:16)) full=tru
 let before = Client.destructions
 do {
     try run()
-    guard Client.destructions == before + 1, ApplicationBudget.shared.used == 0 else { throw Failure("client cleanup count") }
+    guard Client.destructions == before + 1, ApplicationBudget.shared.used == 0, Ownership.outstanding() == 0, Client.reservations == 0, EventMailbox.shared.pending == 0 else { throw Failure("client cleanup count") }
+    let totals = ApplicationBudget.shared.totals
+    guard totals.0 == totals.1 else { throw Failure("buffer accounting mismatch") }
+    print("COUNTERS \(Ownership.summary()) slots=0 budget=0 buffers=\(totals.0)/\(totals.1)")
     print("RESULT completed admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=1")
 } catch {
-    let cleanup = Client.destructions == before + 1 && ApplicationBudget.shared.used == 0 ? 1 : 0
+    let totals = ApplicationBudget.shared.totals
+    let cleanup = Client.destructions == before + 1 && ApplicationBudget.shared.used == 0 && totals.0 == totals.1 && Ownership.outstanding() == 0 && Client.reservations == 0 && EventMailbox.shared.pending == 0 ? 1 : 0
     let reason = (error as? Failure)?.message ?? "unknown"
-    fputs("RESULT rejected reason=\(reason) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=\(cleanup)\n", stderr)
+    fputs("COUNTERS \(Ownership.summary()) slots=\(Client.reservations) budget=\(ApplicationBudget.shared.used) buffers=\(totals.0)/\(totals.1)\nRESULT rejected reason=\(reason) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=\(cleanup)\n", stderr)
     exit(cleanup == 1 ? 1 : 2)
 }

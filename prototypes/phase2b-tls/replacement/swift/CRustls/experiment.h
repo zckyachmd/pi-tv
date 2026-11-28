@@ -4,6 +4,7 @@
  * Never call with a stale handle or after free; C cannot validate pointer lifetime. */
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <sys/types.h>
 typedef struct Server Server;
 Server *experiment_server_new(const uint8_t *, size_t, const uint8_t *, size_t, const uint8_t *, size_t, const uint8_t *, size_t);
@@ -15,6 +16,9 @@ ssize_t experiment_server_write(Server *, const uint8_t *, size_t);
 ssize_t experiment_server_read(Server *, uint8_t *, size_t);
 int experiment_server_close(Server *);
 size_t experiment_server_free_count(void);
+bool experiment_server_reserved(void);
+size_t experiment_server_slot_acquired(void);
+size_t experiment_server_slot_released(void);
 size_t experiment_server_attempt_count(void);
 size_t experiment_server_created_count(void);
 int experiment_server_eof(Server *);

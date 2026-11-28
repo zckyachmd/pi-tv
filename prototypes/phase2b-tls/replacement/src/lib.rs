@@ -17,16 +17,23 @@ use std::{
 static SERVER_FREES: AtomicUsize = AtomicUsize::new(0);
 static SERVER_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
 static SERVER_CREATED: AtomicUsize = AtomicUsize::new(0);
+static SERVER_SLOT_ACQUIRED: AtomicUsize = AtomicUsize::new(0);
+static SERVER_SLOT_RELEASED: AtomicUsize = AtomicUsize::new(0);
 static SERVER_RESERVED: AtomicBool = AtomicBool::new(false);
 
 struct ServerSlot;
 impl Drop for ServerSlot {
     fn drop(&mut self) {
+        SERVER_SLOT_RELEASED.fetch_add(1, Ordering::Relaxed);
         SERVER_RESERVED.store(false, Ordering::Release);
     }
 }
 
 const ALPN: &[u8] = b"pi-tv-experiment/1";
+
+fn valid_pin_len(len: usize) -> bool {
+    (1..=65536).contains(&len)
+}
 
 pub struct Server {
     conn: ServerConnection,
@@ -59,6 +66,7 @@ pub unsafe extern "C" fn experiment_server_new(
             return std::ptr::null_mut();
         }
         let slot = ServerSlot;
+        SERVER_SLOT_ACQUIRED.fetch_add(1, Ordering::Relaxed);
         if ca.is_null()
             || cert.is_null()
             || key.is_null()
@@ -69,8 +77,7 @@ pub unsafe extern "C" fn experiment_server_new(
             || cert_len > 65536
             || key_len == 0
             || key_len > 16384
-            || client_len == 0
-            || client_len > 65536
+            || !valid_pin_len(client_len)
         {
             return std::ptr::null_mut();
         }
@@ -390,6 +397,21 @@ pub extern "C" fn experiment_server_free_count() -> usize {
 }
 
 #[no_mangle]
+pub extern "C" fn experiment_server_reserved() -> bool {
+    SERVER_RESERVED.load(Ordering::Acquire)
+}
+
+#[no_mangle]
+pub extern "C" fn experiment_server_slot_acquired() -> usize {
+    SERVER_SLOT_ACQUIRED.load(Ordering::Relaxed)
+}
+
+#[no_mangle]
+pub extern "C" fn experiment_server_slot_released() -> usize {
+    SERVER_SLOT_RELEASED.load(Ordering::Relaxed)
+}
+
+#[no_mangle]
 pub extern "C" fn experiment_server_attempt_count() -> usize {
     SERVER_ATTEMPTS.load(Ordering::Relaxed)
 }
@@ -405,6 +427,9 @@ mod tests {
 
     #[test]
     fn failed_allocation_releases_server_slot() {
+        assert!(!valid_pin_len(0));
+        assert!(valid_pin_len(65536));
+        assert!(!valid_pin_len(65537));
         unsafe {
             assert!(experiment_server_new(
                 std::ptr::null(),
@@ -415,6 +440,21 @@ mod tests {
                 0,
                 std::ptr::null(),
                 0
+            )
+            .is_null());
+        }
+        assert!(!SERVER_RESERVED.load(Ordering::Acquire));
+        let byte = [0u8];
+        unsafe {
+            assert!(experiment_server_new(
+                byte.as_ptr(),
+                1,
+                byte.as_ptr(),
+                1,
+                byte.as_ptr(),
+                1,
+                byte.as_ptr(),
+                65537
             )
             .is_null());
         }

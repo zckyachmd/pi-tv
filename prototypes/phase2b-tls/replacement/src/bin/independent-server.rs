@@ -10,12 +10,41 @@ use std::{
     sync::Arc,
     time::Duration,
 };
+struct TrackedServer(Option<ServerConnection>);
+impl std::ops::Deref for TrackedServer {
+    type Target = ServerConnection;
+    fn deref(&self) -> &Self::Target {
+        self.0.as_ref().unwrap()
+    }
+}
+impl std::ops::DerefMut for TrackedServer {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.0.as_mut().unwrap()
+    }
+}
+impl Drop for TrackedServer {
+    fn drop(&mut self) {
+        drop(self.0.take());
+        eprintln!("SERVER_OWNERSHIP acquired=1 freed=1 outstanding=0");
+    }
+}
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
         return Err("usage: independent-server fixtures address".into());
     }
-    let read = |name: &str| fs::read(format!("{}/{}", args[1], name));
+    let read = |name: &str| -> std::io::Result<Vec<u8>> {
+        let file = fs::File::open(format!("{}/{}", args[1], name))?;
+        let mut bytes = Vec::new();
+        file.take(65537).read_to_end(&mut bytes)?;
+        if bytes.len() > 65536 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "fixture limit",
+            ));
+        }
+        Ok(bytes)
+    };
     let mut roots = RootCertStore::empty();
     roots.add(CertificateDer::from(read("ca.der")?))?;
     let provider = Arc::new(rustls::crypto::ring::default_provider());
@@ -48,7 +77,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (mut socket, _) = listener.accept()?;
         socket.set_read_timeout(Some(Duration::from_secs(5)))?;
         socket.set_write_timeout(Some(Duration::from_secs(5)))?;
-        let mut conn = ServerConnection::new(config.clone())?;
+        let mut conn = TrackedServer(Some(ServerConnection::new(config.clone())?));
         while conn.is_handshaking() {
             conn.complete_io(&mut socket)?;
         }
@@ -63,7 +92,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         {
             return Err("pin admission failed; admitted=0 delivered=0".into());
         }
-        let mut stream = rustls::Stream::new(&mut conn, &mut socket);
+        let mut stream = rustls::Stream::new(&mut *conn, &mut socket);
         let mut header = [0; 4];
         if let Err(error) = stream.read_exact(&mut header) {
             if error.kind() == std::io::ErrorKind::UnexpectedEof {

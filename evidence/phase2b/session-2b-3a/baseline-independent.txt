@@ -1,0 +1,45 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.03s
+go-client scenario=positive client_exit=0 server_exit=0 EXCHANGE client TLS=0x0304 cipher=0x1301 full=true verified=true alpn=pi-tv-experiment/1 messages=2 local_close_sent=true peer_eof_observed=true
+COUNTERS scenario=go-positive server_connections_freed=1 outstanding=0
+go-client scenario=resumption client_exit=0 server_exit=0 EXCHANGE client TLS=0x0304 cipher=0x1301 full=true verified=true alpn=pi-tv-experiment/1 messages=2 local_close_sent=true peer_eof_observed=true
+COUNTERS scenario=go-resumption server_connections_freed=2 outstanding=0
+go-client scenario=wrong-pin client_exit=1 server_exit=1 peer error: admission failed
+COUNTERS scenario=go-wrong-pin server_connections_freed=1 outstanding=0
+go-client scenario=wrong-host client_exit=1 server_exit=1 peer error: tls: failed to verify certificate: x509: certificate is valid for pi-tv.test, not wrong.test
+COUNTERS scenario=go-wrong-host server_connections_freed=1 outstanding=0
+go-client scenario=rogue-root client_exit=1 server_exit=1 peer error: tls: failed to verify certificate: x509: certificate signed by unknown authority
+COUNTERS scenario=go-rogue-root server_connections_freed=1 outstanding=0
+go-client scenario=wrong-alpn client_exit=1 server_exit=1 peer error: remote error: tls: no application protocol
+COUNTERS scenario=go-wrong-alpn server_connections_freed=1 outstanding=0
+go-client scenario=tls12 client_exit=1 server_exit=1 peer error: remote error: tls: protocol version not supported
+COUNTERS scenario=go-tls12 server_connections_freed=1 outstanding=0
+swift-client scenario=positive client_exit=0 server_exit=0 RESULT completed admitted=1 delivered=1 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=476/476
+swift-client scenario=wrong-pin client_exit=1 server_exit=1 RESULT rejected reason=server pin admitted=0 delivered=0 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=32/32
+swift-client scenario=wrong-host client_exit=1 server_exit=1 RESULT rejected reason=client process: 7128 admitted=0 delivered=0 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=416/416
+swift-client scenario=rogue-root client_exit=1 server_exit=1 RESULT rejected reason=client process: 7127 admitted=0 delivered=0 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=416/416
+swift-client scenario=wrong-alpn client_exit=1 server_exit=1 RESULT rejected reason=client process: 7233 admitted=0 delivered=0 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=416/416
+swift-client scenario=tls12 client_exit=1 server_exit=1 RESULT rejected reason=client process: 7219 admitted=0 delivered=0 cleanup=1
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=416/416
+LIMITATION go-client EOF is indistinguishable from close_notify at record boundary
+COUNTERS scenario=go-truncate server_connections_freed=1 outstanding=0
+PASS swift-client unexpected EOF
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=476/476
+PASS rustls-server scenario=alternate-identity client_exit=1 server_exit=1 pin admission failed; admitted=0 delivered=0
+COUNTERS scenario=go-alternate-identity server_connections_freed=1 outstanding=0
+PASS rustls-server scenario=client-truncate client_exit=1 server_exit=1 unexpected EOF; admitted=1 delivered=0
+COUNTERS scenario=go-client-truncate server_connections_freed=1 outstanding=0
+PASS swift-client scenario=alternate-identity client_exit=1 server_exit=1 stage=server-pin
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=416/416
+PASS rustls-server scenario=partial-clean client_exit=1 server_exit=1 incomplete frame authenticated close; admitted=1 delivered=0
+COUNTERS scenario=go-partial-clean server_connections_freed=1 outstanding=0
+PASS rustls-server scenario=partial-eof client_exit=1 server_exit=1 incomplete frame unexpected EOF; admitted=1 delivered=0
+COUNTERS scenario=go-partial-eof server_connections_freed=1 outstanding=0
+PASS swift-client scenario=partial-clean client_exit=1 server_exit=1 stage=incomplete frame delivered=0
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=423/423
+PASS swift-client scenario=partial-eof client_exit=1 server_exit=1 stage=incomplete frame unexpected EOF delivered=0
+COUNTERS certified-key:1/1/0/1/0/0,client-config:1/1/0/1/0/0,client-connection:1/1/0/0/0/0,client-slot:1/1/0/0/0/0,config-builder:1/0/1/0/0/0,provider:1/1/0/1/0/0,root-builder:1/1/0/0/0/1,root-store:1/1/0/1/0/0,verifier:1/1/0/1/0/0,verifier-builder:1/1/0/0/0/1 slots=0 budget=0 buffers=423/423

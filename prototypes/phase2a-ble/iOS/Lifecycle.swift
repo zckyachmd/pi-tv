@@ -19,6 +19,10 @@ struct Lifecycle {
         state = next; deadline = timeout.map { now() + $0 }; return true
     }
     mutating func invalidate() { _ = move(.disconnecting, timeout: 10) }
+    mutating func connectionFailed() -> Bool {
+        guard state == .connecting || state == .disconnecting else { return false }
+        return move(.disconnected)
+    }
     mutating func expireDisconnect() {
         if state == .disconnecting && expired() { _ = move(.failed) }
     }

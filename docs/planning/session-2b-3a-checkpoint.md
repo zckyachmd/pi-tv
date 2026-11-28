@@ -1,0 +1,21 @@
+# Session 2B.3A checkpoint — incomplete
+
+Baseline `b32c0c874e808641a4f895c7eafeee9b2e262c01` was checked out. The existing Phase 2A signing modification was preserved. The admitted replacement `Cargo.lock` SHA-256 is `5e55bcee432cf46786dd8b59f92b62ab0932f63e1e18a5438e9e734887d7d665`, identical to the baseline blob.
+
+## Independent execution
+
+- `CARGO_HOME=/tmp/pi-tv-phase2b-cargo CARGO_NET_OFFLINE=true prototypes/phase2b-tls/replacement/run-host-tests.sh` exited 0 at baseline and after the mailbox change. The script asserts expected outcomes and terminal balances; raw outputs are in `evidence/phase2b/session-2b-3a/`.
+- `PITV_GO=/tmp/pi-tv-go1274/go/bin/go CARGO_HOME=/tmp/pi-tv-phase2b-cargo CARGO_NET_OFFLINE=true prototypes/phase2b-tls/replacement/independent/run.sh` exited 0 at baseline. Its structured results are in the same evidence directory. Go's record-boundary EOF ambiguity remains a test-peer limitation.
+- `swiftc prototypes/phase2a-ble/iOS/Lifecycle.swift prototypes/phase2a-ble/tests/lifecycle/main.swift -o /tmp/pitv-2b3a-lifecycle && /tmp/pitv-2b3a-lifecycle` exited 0.
+- Initial `xcodebuild` attempt with scheme `Phase2A-iOS` failed (exit 65): scheme does not exist. Corrected commands used `-scheme Central`, `CODE_SIGNING_ALLOWED=NO`, and separate derived data paths `/tmp/pitv-2b3a-device` and `/tmp/pitv-2b3a-simulator`; both `-sdk iphoneos` and `-sdk iphonesimulator` builds exited 0. Main executables SHA-256: device `c69d46bc7c98a7d5c8834d3c0c214fe99aaef18322b46d1c00afbfbba17c5d5a`; simulator `eda1b4591144d54a9f83554ae9e4ad22e3f07825470a74dd59bd60bd411077b0`. These are unsigned Phase 2A builds, not secure integration targets. Xcode enumerated available destinations; no app was launched on a device or simulator.
+
+## Findings and changes
+
+- BLE-23: `didFailToConnect` previously accepted only `.connecting`. After timeout or cancellation moves to `.disconnecting`, that callback was ignored and the retained peripheral prevented scanning until a later disconnect callback, potentially timing out. It now accepts the current peripheral in either state, clears transport and transitions to disconnected. A lifecycle test covers the transition; CoreBluetooth callback ordering is not physically verified.
+- BLE-21: discovery now logs the peripheral UUID and advertised local name with an expected experiment label explicitly marked diagnostic. This is not authentication. Advertisement names may be absent and this does not establish a build or protocol identifier supplied by the peer; BLE-21 remains open.
+- Mailbox drain previously looped until empty. A sustained producer could keep the main owner busy indefinitely, delaying cancellation and deadlines. Each drain now handles at most eight events and schedules at most one continuation. Existing host tests pass, but a deterministic sustained-submission fairness regression has not been added; this change is not yet accepted as verified.
+- The Swift `Client.readTLS` path passes callback ciphertext to rustls without enforcing a cumulative handshake-input ceiling; the in-memory harness checks totals separately. A peer can therefore bypass that harness check at an actual adapter boundary. The Rust server checks a 65,536-byte input ceiling in `experiment_server_input`, but neither endpoint has the required explicit transport admission deadline. The boundary needs a counted pre-TLS input API, monotonic deadline and exact-limit, excess and stalled-input tests before integration.
+
+## Outstanding work and gate
+
+The SEC-01–SEC-19 completion dispositions and resource contract were consulted, but a complete independent source audit is not finished. No independent-review pass is asserted. Deterministic fairness tests, secure input enforcement, BLE/TLS wiring, bounded receipt/backpressure lifecycle checks, integration targets, post-change independent suite, full Phase 2A regressions and independent security review remain. No physical test is ready to authorize. Once host preparation is completed, Session 2B.3B requires owner authorization for installing and launching the isolated experiment on the identified iPhone and Mac, enabling the necessary Bluetooth advertising and exercising connection, identity, cancellation, reconnect, receipt and cleanup scenarios. Raspberry Pi access requires separate explicit authorization if added to scope.

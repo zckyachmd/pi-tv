@@ -7,6 +7,10 @@ let report = BenchmarkReport(requestedAttempts: 2, delayMilliseconds: 0, status:
 let encoded = try! JSONEncoder().encode(report)
 assert(try! JSONDecoder().decode(BenchmarkReport.self, from: encoded).attempts.first?.requestID == 257)
 var deadlineClock: TimeInterval = 0
+var failedConnection = Lifecycle()
+assert(failedConnection.move(.idle)); assert(failedConnection.move(.scanning)); assert(failedConnection.move(.connecting))
+failedConnection.invalidate(); assert(failedConnection.connectionFailed()); assert(failedConnection.state == .disconnected)
+assert(!failedConnection.connectionFailed()); assert(failedConnection.move(.scanning))
 var deadlineLifecycle = Lifecycle(now: { deadlineClock })
 assert(deadlineLifecycle.move(.idle)); assert(deadlineLifecycle.move(.scanning)); assert(deadlineLifecycle.move(.connecting, timeout: 10))
 deadlineClock = 10

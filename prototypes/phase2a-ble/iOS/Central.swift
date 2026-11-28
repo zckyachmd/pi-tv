@@ -82,6 +82,8 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
     }
     func centralManager(_ central: CBCentralManager, didDiscover peripheral: CBPeripheral, advertisementData: [String: Any], rssi RSSI: NSNumber) {
         guard lifecycle.state == .scanning, transition(.connecting, timeout: 15) else { return }
+        let advertisedName = advertisementData[CBAdvertisementDataLocalNameKey] as? String ?? "unavailable"
+        log("Discovered \(peripheral.identifier.uuidString), advertised name: \(advertisedName); expected Phase2A Echo (diagnostic only)")
         central.stopScan(); self.peripheral = peripheral; peripheral.delegate = self
         central.connect(peripheral)
     }
@@ -93,7 +95,8 @@ final class Central: NSObject, ObservableObject, CBCentralManagerDelegate, CBPer
     }
     func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
         checkDeadlines()
-        guard active(peripheral, .connecting) else { return }; clear(); _ = transition(.disconnected); status = "Connection failed"
+        guard self.peripheral === peripheral, lifecycle.connectionFailed() else { return }
+        clear(); status = "Connection failed"
     }
     func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
         guard self.peripheral === peripheral else { return }; requests.clear(); updateRequest(); finishBenchmarkAttempt(reason: "Disconnected"); clear(); _ = transition(.disconnected)

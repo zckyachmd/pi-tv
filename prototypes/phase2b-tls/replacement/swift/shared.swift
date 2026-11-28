@@ -136,7 +136,7 @@ final class EventMailbox {
     }
     private func drain() {
         precondition(Thread.isMainThread)
-        while true {
+        for _ in 0..<8 {
             lock.lock()
             guard !events.isEmpty else { scheduled = false; lock.unlock(); return }
             var event: Event? = events.removeFirst()
@@ -152,6 +152,10 @@ final class EventMailbox {
             event = nil
             lock.lock(); outstanding -= 1; lock.unlock()
         }
+        lock.lock()
+        if events.isEmpty { scheduled = false; lock.unlock(); return }
+        DispatchQueue.main.async { self.drain() }
+        lock.unlock()
     }
 }
 func unframe(_ bytes: [UInt8]) throws -> DecodedMessage {

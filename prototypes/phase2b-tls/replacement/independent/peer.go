@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/binary"
 	"fmt"
 	"io"
 	"net"
@@ -35,6 +36,13 @@ func run() error {
 		role, peer = "server", "client"
 	} else if mode != "client" {
 		return fmt.Errorf("invalid mode")
+	}
+	if os.Getenv("PITV_TEST") == "alternate-identity" {
+		if mode == "client" {
+			role = "alternate"
+		} else {
+			role = "alternate-server"
+		}
 	}
 	cert, err := tls.LoadX509KeyPair(dir+"/"+role+".pem", dir+"/"+role+".key")
 	if err != nil {
@@ -108,26 +116,76 @@ func runConnection(mode, addr string, cfg *tls.Config, pin []byte) error {
 	if !st.HandshakeComplete || st.Version != tls.VersionTLS13 || st.DidResume || st.NegotiatedProtocol != "pi-tv-experiment/1" || len(st.VerifiedChains) == 0 || len(st.PeerCertificates) == 0 || !bytes.Equal(st.PeerCertificates[0].Raw, pin) {
 		return fmt.Errorf("admission failed")
 	}
+	if os.Getenv("PITV_TEST") == "client-truncate" && mode == "client" {
+		c.Close()
+		return fmt.Errorf("injected client unclean close after authentication")
+	}
 	send, want := []byte("go-to-rustls"), []byte("rustls-to-go")
 	if mode == "server" {
 		send, want = want, send
 	}
-	if mode == "client" {
-		if _, err = tc.Write(send); err != nil {
-			return err
+	partial := os.Getenv("PITV_TEST") == "partial-clean" || os.Getenv("PITV_TEST") == "partial-eof"
+	writeFrame := func(payload []byte) error {
+		msg := make([]byte, 4+len(payload))
+		binary.BigEndian.PutUint32(msg[:4], uint32(len(payload)))
+		copy(msg[4:], payload)
+		if partial {
+			msg = msg[:7]
 		}
-	}
-	data := make([]byte, len(want))
-	if _, err = io.ReadFull(tc, data); err != nil {
+		_, err := tc.Write(msg)
 		return err
 	}
-	if !bytes.Equal(data, want) {
-		return fmt.Errorf("message mismatch")
-	}
-	if mode == "server" {
-		if _, err = tc.Write(send); err != nil {
+	readFrame := func() error {
+		var header [4]byte
+		if _, err := io.ReadFull(tc, header[:]); err != nil {
 			return err
 		}
+		size := binary.BigEndian.Uint32(header[:])
+		if size > 4092 {
+			return fmt.Errorf("frame too large")
+		}
+		data := make([]byte, size)
+		if _, err := io.ReadFull(tc, data); err != nil {
+			return err
+		}
+		if !bytes.Equal(data, want) {
+			return fmt.Errorf("message mismatch")
+		}
+		return nil
+	}
+	if mode == "client" {
+		if err := writeFrame(send); err != nil {
+			return err
+		}
+	}
+	if mode == "client" && partial {
+		if os.Getenv("PITV_TEST") == "partial-clean" {
+			if err := tc.CloseWrite(); err != nil {
+				return err
+			}
+		} else {
+			c.Close()
+		}
+		return fmt.Errorf("injected partial frame")
+	}
+	if err := readFrame(); err != nil {
+		return err
+	}
+	if mode == "server" {
+		if err := writeFrame(send); err != nil {
+			return err
+		}
+	}
+	if mode == "server" && partial {
+		if os.Getenv("PITV_TEST") == "partial-clean" {
+			if err := tc.CloseWrite(); err != nil {
+				return err
+			}
+			time.Sleep(100 * time.Millisecond)
+		} else {
+			c.Close()
+		}
+		return fmt.Errorf("injected partial frame")
 	}
 	if os.Getenv("PITV_TEST") == "truncate" {
 		var data [1]byte

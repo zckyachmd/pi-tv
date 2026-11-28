@@ -61,14 +61,40 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             || conn.protocol_version() != Some(rustls::ProtocolVersion::TLSv1_3)
             || conn.handshake_kind() != Some(rustls::HandshakeKind::Full)
         {
-            return Err("admission failed".into());
+            return Err("pin admission failed; admitted=0 delivered=0".into());
         }
         let mut stream = rustls::Stream::new(&mut conn, &mut socket);
-        let mut msg = [0; 12];
-        stream.read_exact(&mut msg)?;
-        if &msg != b"go-to-rustls" {
+        let mut header = [0; 4];
+        if let Err(error) = stream.read_exact(&mut header) {
+            if error.kind() == std::io::ErrorKind::UnexpectedEof {
+                return Err("unexpected EOF; admitted=1 delivered=0".into());
+            }
+            return Err(error.into());
+        }
+        let length = u32::from_be_bytes(header) as usize;
+        if length > 4092 {
+            return Err("oversized frame; admitted=1 delivered=0".into());
+        }
+        let mut msg = vec![0; length];
+        let mut offset = 0;
+        while offset < length {
+            match stream.read(&mut msg[offset..]) {
+                Ok(0) => {
+                    return Err(
+                        "incomplete frame authenticated close; admitted=1 delivered=0".into(),
+                    )
+                }
+                Ok(n) => offset += n,
+                Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => {
+                    return Err("incomplete frame unexpected EOF; admitted=1 delivered=0".into())
+                }
+                Err(error) => return Err(error.into()),
+            }
+        }
+        if msg != b"go-to-rustls" {
             return Err("message mismatch".into());
         }
+        stream.write_all(&(12u32.to_be_bytes()))?;
         stream.write_all(b"rustls-to-go")?;
         stream.flush()?;
         if env::var("PITV_TRUNCATE").is_ok() {

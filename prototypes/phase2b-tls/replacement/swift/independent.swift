@@ -43,7 +43,7 @@ let clientOwner: Client = try {
     var raw: OpaquePointer?
     try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
     guard let raw else { throw Failure("client") }
-    return Client(raw, pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER)
+    return try Client(raw, pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER)
 }()
 defer { clientOwner.fail() }
 do { _ = try clientOwner.write([1]); throw Failure("pre-admission client write allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
@@ -68,6 +68,7 @@ let reader: rustls_read_callback = { user, buf, count, read in
     let n = Darwin.recv(fd, buf, count, 0); if n < 0 { return errno }; read!.pointee = n; return 0
 }
 var socketFD = fd
+let parser = FrameDecoder()
 func flush() throws {
     while (try clientOwner.wantsWrite()) {
         var n = 0; let result = (try clientOwner.writeTLS(writer, &socketFD, &n))
@@ -81,6 +82,7 @@ func receive() throws {
         var byte = [UInt8](repeating: 0, count: 1), read = 0
         let outcome = try clientOwner.rawRead(&byte, &read, allowClosing: true)
         guard outcome == RUSTLS_RESULT_UNEXPECTED_EOF.rawValue else { throw Failure("unexpected EOF classification") }
+        do { try parser.finish() } catch { throw Failure("incomplete frame unexpected EOF") }
         throw Failure("unexpected EOF")
     }
     try clientOwner.process()
@@ -92,13 +94,20 @@ for _ in 0..<100 {
 }
 try flush()
 try clientOwner.admit()
-let send = Array("go-to-rustls".utf8)
+let send = frame(Array("go-to-rustls".utf8))
 guard try clientOwner.write(send) == send.count else { throw Failure("short write") }
 try flush()
-try receive()
-var message = [UInt8](repeating: 0, count: 128)
-let count = try clientOwner.read(&message)
-guard Array(message.prefix(count)) == Array("rustls-to-go".utf8) else { throw Failure("message") }
+var message = [UInt8](repeating: 0, count: 128), messages: [[UInt8]] = []
+for _ in 0..<100 {
+    let count = try clientOwner.read(&message)
+    if count == -1 { try receive(); continue }
+    if count == 0 { try parser.finish(); throw Failure("message EOF") }
+    messages += try parser.feed(Array(message.prefix(count)))
+    if !messages.isEmpty { break }
+}
+guard messages == [Array("rustls-to-go".utf8)] else { throw Failure("message") }
+try parser.finish()
+Trace.delivered += 1
 let cipher = try clientOwner.cipher()
 try clientOwner.shutdown()
 do { _ = try clientOwner.write([1]); throw Failure("write after close accepted") }
@@ -115,4 +124,14 @@ guard closeCount == 0 else { throw Failure("missing authenticated close") }
 try clientOwner.finishClose()
 print("PASS swift-client TLS=0x0304 cipher=0x\(String(cipher,radix:16)) full=true verified=true alpn=pi-tv-experiment/1 messages=2 close_notify=both")
 }
-do { try run() } catch { fputs("independent failed: \(error)\n", stderr); exit(1) }
+let before = Client.destructions
+do {
+    try run()
+    guard Client.destructions == before + 1 else { throw Failure("client cleanup count") }
+    print("RESULT completed admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=1")
+} catch {
+    let cleanup = Client.destructions == before + 1 ? 1 : 0
+    let reason = (error as? Failure)?.message ?? "unknown"
+    fputs("RESULT rejected reason=\(reason) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=\(cleanup)\n", stderr)
+    exit(cleanup == 1 ? 1 : 2)
+}

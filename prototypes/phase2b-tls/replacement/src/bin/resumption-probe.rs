@@ -60,21 +60,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let restricted = Arc::new(restricted);
     let pins = (read("client.der")?, read("server.der")?);
-    let (first, _) = connect(client.clone(), positive.clone(), false, false, &pins)?;
+    let (first, _, _) = connect(client.clone(), positive.clone(), false, false, &pins)?;
     if first != HandshakeKind::Full {
         return Err("initial handshake was not full".into());
     }
-    let (second, early) = connect(client.clone(), positive, true, false, &pins)?;
-    if second != HandshakeKind::Resumed || !early {
-        return Err("positive control did not offer early data and resume".into());
+    let (second, early, positive_accepted) = connect(client.clone(), positive, true, false, &pins)?;
+    if second != HandshakeKind::Resumed || !early || !positive_accepted {
+        return Err("positive control did not resume and accept early data".into());
     }
-    let (third, early) = connect(client, restricted, true, true, &pins)?;
-    if third != HandshakeKind::Full || !early {
+    let (third, early, restricted_accepted) = connect(client, restricted, true, true, &pins)?;
+    if third != HandshakeKind::Full || !early || restricted_accepted {
         return Err(
             "restricted handshake did not reject offered ticket with full handshake".into(),
         );
     }
-    println!("PASS initial=full positive=resumed positive_early_offered=true restricted_early_offered=true restricted=full restricted_early_accepted=false application_delivery=0");
+    println!("PASS initial=full positive=resumed positive_early_offered=true positive_early_accepted={positive_accepted} restricted_early_offered=true restricted=full restricted_early_accepted=false application_delivery=0");
     Ok(())
 }
 fn connect(
@@ -83,7 +83,7 @@ fn connect(
     offer: bool,
     restricted: bool,
     pins: &(Vec<u8>, Vec<u8>),
-) -> Result<(HandshakeKind, bool), Box<dyn std::error::Error>> {
+) -> Result<(HandshakeKind, bool, bool), Box<dyn std::error::Error>> {
     let mut c = ClientConnection::new(client, ServerName::try_from("pi-tv.test")?.to_owned())?;
     let mut s = ServerConnection::new(server)?;
     let mut offered = false;
@@ -138,7 +138,11 @@ fn connect(
                     _ => return Err("restricted server delivered application data".into()),
                 }
             }
-            return Ok((c.handshake_kind().ok_or("missing kind")?, offered));
+            return Ok((
+                c.handshake_kind().ok_or("missing kind")?,
+                offered,
+                c.is_early_data_accepted(),
+            ));
         }
     }
     Err("handshake did not converge".into())

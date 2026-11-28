@@ -54,10 +54,10 @@ for scenario in positive wrong-pin wrong-host rogue-root wrong-alpn tls12; do
     wait "$server_pid"; server_exit=$?
     set -e
     if [ "$scenario" = positive ]; then
-        [ "$client_exit" -eq 0 ] && [ "$server_exit" -eq 0 ] && grep -q 'PASS swift-client' "$rustlog" && grep -q 'EXCHANGE server' "$golog" || { cat "$rustlog" "$golog"; exit 1; }
+        [ "$client_exit" -eq 0 ] && [ "$server_exit" -eq 0 ] && grep -q 'PASS swift-client' "$rustlog" && grep -q 'RESULT completed admitted=1 delivered=1 cleanup=1' "$rustlog" && grep -q 'EXCHANGE server' "$golog" || { cat "$rustlog" "$golog"; exit 1; }
     else
         case "$scenario" in wrong-pin) expected='server pin';; wrong-host) expected='process: 7128';; rogue-root) expected='process: 7127';; wrong-alpn) expected='process: 7233';; tls12) expected='process: 7219';; esac
-        [ "$client_exit" -eq 1 ] && [ "$server_exit" -ne 0 ] && grep -Fq "$expected" "$rustlog" && ! grep -q PASS "$golog" || { cat "$rustlog" "$golog"; exit 1; }
+        [ "$client_exit" -eq 1 ] && [ "$server_exit" -ne 0 ] && grep -Fq "$expected" "$rustlog" && grep -q 'admitted=0 delivered=0 cleanup=1' "$rustlog" && ! grep -q PASS "$golog" || { cat "$rustlog" "$golog"; exit 1; }
     fi
     printf 'swift-client scenario=%s client_exit=%s server_exit=%s ' "$scenario" "$client_exit" "$server_exit"
     tail -1 "$rustlog"
@@ -79,3 +79,49 @@ wait "$server_pid"; server_exit=$?
 set -e
 [ "$client_exit" -eq 1 ] && [ "$server_exit" -eq 1 ] && grep -q 'unexpected EOF' "$rustlog" && grep -q 'injected unclean close' "$golog" || { cat "$rustlog" "$golog"; exit 1; }
 printf 'PASS swift-client unexpected EOF\n'
+
+for scenario in alternate-identity client-truncate; do
+    target/debug/independent-server "$fixtures" 127.0.0.1:39183 >"$rustlog" 2>&1 & server_pid=$!
+    attempt=0; until grep -q READY "$rustlog"; do attempt=$((attempt+1)); [ "$attempt" -lt 100 ] || { kill "$server_pid" 2>/dev/null || :; exit 1; }; sleep 0.05; done
+    set +e
+    PITV_TEST="$scenario" "$peer" client "$fixtures" 127.0.0.1:39183 >"$golog" 2>&1; client_exit=$?
+    wait "$server_pid"; server_exit=$?
+    set -e
+    case "$scenario" in
+        alternate-identity) expected='pin admission failed; admitted=0 delivered=0';;
+        client-truncate) expected='unexpected EOF; admitted=1 delivered=0';;
+    esac
+    [ "$client_exit" -eq 1 ] && [ "$server_exit" -eq 1 ] && grep -Fq "$expected" "$rustlog" && ! grep -q 'PASS rustls-server' "$rustlog" || { cat "$golog" "$rustlog"; exit 1; }
+    printf 'PASS rustls-server scenario=%s client_exit=%s server_exit=%s %s\n' "$scenario" "$client_exit" "$server_exit" "$expected"
+done
+PITV_TEST=alternate-identity "$peer" server "$fixtures" 127.0.0.1:39184 >"$golog" 2>&1 & server_pid=$!
+attempt=0; until grep -q READY "$golog"; do attempt=$((attempt+1)); [ "$attempt" -lt 100 ] || { kill "$server_pid" 2>/dev/null || :; exit 1; }; sleep 0.05; done
+set +e
+"$swiftpeer" "$fixtures" 39184 >"$rustlog" 2>&1; client_exit=$?
+wait "$server_pid"; server_exit=$?
+set -e
+[ "$client_exit" -eq 1 ] && [ "$server_exit" -eq 1 ] && grep -q 'server pin' "$rustlog" && grep -q 'admitted=0 delivered=0 cleanup=1' "$rustlog" && ! grep -q 'PASS swift-client' "$rustlog" || { cat "$rustlog" "$golog"; exit 1; }
+printf 'PASS swift-client scenario=alternate-identity client_exit=1 server_exit=1 stage=server-pin\n'
+
+for scenario in partial-clean partial-eof; do
+    target/debug/independent-server "$fixtures" 127.0.0.1:39183 >"$rustlog" 2>&1 & server_pid=$!
+    attempt=0; until grep -q READY "$rustlog"; do attempt=$((attempt+1)); [ "$attempt" -lt 100 ] || { kill "$server_pid" 2>/dev/null || :; exit 1; }; sleep 0.05; done
+    set +e
+    PITV_TEST="$scenario" "$peer" client "$fixtures" 127.0.0.1:39183 >"$golog" 2>&1; client_exit=$?
+    wait "$server_pid"; server_exit=$?
+    set -e
+    case "$scenario" in partial-clean) expected='incomplete frame authenticated close; admitted=1 delivered=0';; partial-eof) expected='incomplete frame unexpected EOF; admitted=1 delivered=0';; esac
+    [ "$client_exit" -eq 1 ] && [ "$server_exit" -eq 1 ] && grep -Fq "$expected" "$rustlog" || { cat "$golog" "$rustlog"; exit 1; }
+    printf 'PASS rustls-server scenario=%s client_exit=1 server_exit=1 %s\n' "$scenario" "$expected"
+done
+for scenario in partial-clean partial-eof; do
+    PITV_TEST="$scenario" "$peer" server "$fixtures" 127.0.0.1:39184 >"$golog" 2>&1 & server_pid=$!
+    attempt=0; until grep -q READY "$golog"; do attempt=$((attempt+1)); [ "$attempt" -lt 100 ] || { kill "$server_pid" 2>/dev/null || :; exit 1; }; sleep 0.05; done
+    set +e
+    "$swiftpeer" "$fixtures" 39184 >"$rustlog" 2>&1; client_exit=$?
+    wait "$server_pid"; server_exit=$?
+    set -e
+    case "$scenario" in partial-clean) expected='incomplete frame';; partial-eof) expected='incomplete frame unexpected EOF';; esac
+    [ "$client_exit" -eq 1 ] && [ "$server_exit" -eq 1 ] && grep -Fq "$expected" "$rustlog" && grep -q 'admitted=1 delivered=0 cleanup=1' "$rustlog" && grep -q 'injected partial frame' "$golog" && ! grep -q 'PASS swift-client' "$rustlog" || { cat "$rustlog" "$golog"; exit 1; }
+    printf 'PASS swift-client scenario=%s client_exit=1 server_exit=1 stage=%s delivered=0\n' "$scenario" "$expected"
+done

@@ -366,3 +366,25 @@ pub unsafe extern "C" fn experiment_server_close(server: *mut Server) -> i32 {
 pub extern "C" fn experiment_server_free_count() -> usize {
     SERVER_FREES.load(Ordering::Relaxed)
 }
+
+#[no_mangle]
+pub unsafe extern "C" fn experiment_server_eof(server: *mut Server) -> i32 {
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if server.is_null() {
+            return -1;
+        }
+        let server = &mut *server;
+        if server.failed {
+            return -1;
+        }
+        match server.conn.read_tls(&mut Cursor::new(&[])) {
+            Ok(0) => 0,
+            _ => {
+                server.admitted = false;
+                server.failed = true;
+                -1
+            }
+        }
+    }))
+    .unwrap_or(-1)
+}

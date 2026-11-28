@@ -1,0 +1,44 @@
+PASS oversized_chain library_rejection=InvalidMessage(HandshakePayloadTooLarge) received=20480 admitted=0
+PASS initial=full positive=resumed positive_early_offered=true restricted_early_offered=true restricted=full restricted_early_accepted=false application_delivery=0
+TLS=0x0304 cipher=0x1302 full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=7.088125 message_ms=1.781833 client_cipher=882 server_cipher=846 queue_high=783 messages=2 close_notify=both
+TLS=0x0304 cipher=0x1302 full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=3.107542 message_ms=1.254041 client_cipher=881 server_cipher=848 queue_high=785 messages=2 close_notify=both
+TLS=0x0304 cipher=0x1302 full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=2.913292 message_ms=7.513417 client_cipher=4961 server_cipher=4926 queue_high=4096 messages=2 close_notify=both
+TLS=0x0304 cipher=0x1302 full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=2.914292 message_ms=1.144584 client_cipher=880 server_cipher=848 queue_high=785 messages=2 close_notify=both
+TLS=0x0304 cipher=0x1302 full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=2.438708 message_ms=1.456334 client_cipher=881 server_cipher=848 queue_high=785 messages=2 close_notify=both
+PASS expired: RESULT rejected stage=client process: 7122 admitted=0 delivered=0 cleanup=1
+PASS wrong-host: RESULT rejected stage=client process: 7128 admitted=0 delivered=0 cleanup=1
+PASS wrong-server-pin: RESULT rejected stage=server pin admitted=0 delivered=0 cleanup=1
+PASS wrong-client-pin: RESULT rejected stage=server output admitted=0 delivered=0 cleanup=1
+PASS alternate-client: RESULT rejected stage=server output admitted=0 delivered=0 cleanup=1
+PASS missing-client: RESULT rejected stage=server input admitted=0 delivered=0 cleanup=1
+PASS wrong-alpn: RESULT rejected stage=server input admitted=0 delivered=0 cleanup=1
+PASS missing-alpn: RESULT rejected stage=server output admitted=0 delivered=0 cleanup=1
+PASS tls12: RESULT rejected stage=server input admitted=0 delivered=0 cleanup=1
+PASS corrupt: RESULT rejected stage=server input admitted=0 delivered=0 cleanup=1
+PASS rogue-root: RESULT rejected stage=client process: 7127 admitted=0 delivered=0 cleanup=1
+PASS wrong-usage: RESULT rejected stage=server input admitted=0 delivered=0 cleanup=1
+PASS inject-einval: RESULT rejected stage=ambiguous FFI I/O failure admitted=0 delivered=0 cleanup=1
+PASS inject-eio: RESULT rejected stage=fatal FFI I/O failure 5 admitted=0 delivered=0 cleanup=1
+PASS truncate: RESULT rejected stage=unexpected EOF detected admitted=1 delivered=2 cleanup=1
+PASS invalid-ack: RESULT rejected stage=invalid receipt admitted=0 delivered=0 cleanup=1
+PASS lost-ack: RESULT rejected stage=receipt deadline admitted=0 delivered=0 cleanup=1
+PASS duplicate: RESULT rejected stage=invalid chunk sequence admitted=0 delivered=0 cleanup=1
+PASS reorder: RESULT rejected stage=invalid chunk sequence admitted=0 delivered=0 cleanup=1
+PASS lost-middle: RESULT rejected stage=receipt deadline admitted=0 delivered=0 cleanup=1
+PASS lost-final: RESULT rejected stage=receipt deadline admitted=1 delivered=2 cleanup=1
+PASS inject-panic: RESULT rejected stage=explicit FFI panic result at injected admitted=0 delivered=0 cleanup=1
+PASS inject-wouldblock: RESULT rejected stage=handshake deadline admitted=0 delivered=0 cleanup=1
+PASS replay: RESULT rejected stage=replayed ciphertext rejected admitted=1 delivered=1 cleanup=1
+PASS previous-replay: RESULT rejected stage=replayed ciphertext rejected admitted=1 delivered=1 cleanup=1
+PASS deferred-event: RESULT rejected stage=deferred old event rejected admitted=0 delivered=0 cleanup=1
+PASS cancel-receipt: RESULT rejected stage=cancelled delayed receipt admitted=0 delivered=0 cleanup=1
+PASS cancel-shutdown: RESULT rejected stage=cancelled shutdown admitted=1 delivered=2 cleanup=1
+PASS cancel: RESULT rejected stage=injected cancellation admitted=0 delivered=0 cleanup=1
+PASS cancel-handshake: RESULT rejected stage=cancelled handshake admitted=0 delivered=0 cleanup=1
+PASS cancel-transfer: RESULT rejected stage=cancelled transfer admitted=1 delivered=0 cleanup=1
+PASS pre-admission: RESULT rejected stage=pre-admission rejected admitted=0 delivered=0 cleanup=1
+PASS oversized: RESULT rejected stage=oversized input rejected admitted=0 delivered=0 cleanup=1
+PASS consume-failure: RESULT rejected stage=consumed builder failure admitted=0 delivered=0 cleanup=1
+PASS inject-builder: RESULT rejected stage=injected builder failure admitted=0 delivered=0 cleanup=1
+PASS inject-config: RESULT rejected stage=injected config failure admitted=0 delivered=0 cleanup=1
+PASS inject-connection: RESULT rejected stage=injected connection failure admitted=0 delivered=0 cleanup=1

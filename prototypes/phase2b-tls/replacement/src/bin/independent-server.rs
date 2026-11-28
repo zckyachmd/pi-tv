@@ -31,6 +31,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     config.alpn_protocols = vec![b"pi-tv-experiment/1".to_vec()];
     config.send_tls13_tickets = 0;
     config.max_early_data_size = 0;
+    config.send_half_rtt_data = false;
+    config.session_storage = Arc::new(rustls::server::NoServerSessionStorage {});
+    if config.ticketer.enabled() {
+        return Err("stateless tickets enabled".into());
+    }
     let listener = TcpListener::bind(&args[2])?;
     println!("READY");
     let rounds = if env::var("PITV_RESUMPTION_PROBE").is_ok() {
@@ -66,11 +71,33 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         stream.write_all(b"rustls-to-go")?;
         stream.flush()?;
-        println!("PASS rustls-server TLS=1.3 full=true mutual-pin=true messages=2");
+        if env::var("PITV_TRUNCATE").is_ok() {
+            conn.read_tls(&mut socket)?;
+            conn.process_new_packets()?;
+            println!("INJECTED_TRUNCATION");
+            return Ok(());
+        }
         conn.send_close_notify();
         while conn.wants_write() {
             conn.write_tls(&mut socket)?;
         }
+        loop {
+            let mut byte = [0; 1];
+            match conn.reader().read(&mut byte) {
+                Ok(0) => break,
+                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                    let n = conn.read_tls(&mut socket)?;
+                    conn.process_new_packets()?;
+                    if n == 0 {
+                        return Err("missing authenticated close".into());
+                    }
+                }
+                _ => return Err("unexpected close data or truncation".into()),
+            }
+        }
+        println!(
+            "PASS rustls-server TLS=1.3 full=true mutual-pin=true messages=2 close_notify=both"
+        );
     }
     Ok(())
 }

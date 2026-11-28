@@ -129,6 +129,24 @@ func runConnection(mode, addr string, cfg *tls.Config, pin []byte) error {
 			return err
 		}
 	}
-	fmt.Printf("PASS %s TLS=0x%04x cipher=0x%04x full=true verified=true alpn=%s messages=2\n", mode, st.Version, st.CipherSuite, st.NegotiatedProtocol)
+	if os.Getenv("PITV_TEST") == "truncate" {
+		var data [1]byte
+		if _, err := tc.Read(data[:]); err != io.EOF {
+			return fmt.Errorf("expected client EOF: %v", err)
+		}
+		c.Close()
+		return fmt.Errorf("injected unclean close")
+	}
+	if err := tc.CloseWrite(); err != nil {
+		return err
+	}
+	if _, err := tc.Write([]byte("after-close")); err == nil {
+		return fmt.Errorf("write after close accepted")
+	}
+	var tail [1]byte
+	if n, err := tc.Read(tail[:]); n != 0 || err != io.EOF {
+		return fmt.Errorf("authenticated shutdown missing: n=%d err=%v", n, err)
+	}
+	fmt.Printf("EXCHANGE %s TLS=0x%04x cipher=0x%04x full=true verified=true alpn=%s messages=2 local_close_sent=true peer_eof_observed=true\n", mode, st.Version, st.CipherSuite, st.NegotiatedProtocol)
 	return nil
 }

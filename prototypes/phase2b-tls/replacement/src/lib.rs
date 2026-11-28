@@ -25,6 +25,7 @@ pub struct Server {
     failed: bool,
     local_closing: bool,
     peer_closed: bool,
+    handshake_bytes: usize,
 }
 
 #[no_mangle]
@@ -85,6 +86,11 @@ pub unsafe extern "C" fn experiment_server_new(
         config.alpn_protocols = vec![ALPN.to_vec()];
         config.send_tls13_tickets = 0;
         config.max_early_data_size = 0;
+        config.send_half_rtt_data = false;
+        config.session_storage = Arc::new(rustls::server::NoServerSessionStorage {});
+        if config.ticketer.enabled() {
+            return std::ptr::null_mut();
+        }
         let mut conn = match ServerConnection::new(Arc::new(config)) {
             Ok(c) => c,
             Err(_) => return std::ptr::null_mut(),
@@ -97,6 +103,7 @@ pub unsafe extern "C" fn experiment_server_new(
             failed: false,
             local_closing: false,
             peer_closed: false,
+            handshake_bytes: 0,
         }))
     }))
     .unwrap_or_else(|_| std::ptr::null_mut())
@@ -131,6 +138,16 @@ pub unsafe extern "C" fn experiment_server_input(
         }
         if s.failed || len == 0 {
             return -1;
+        }
+        if s.conn.is_handshaking() {
+            match s.handshake_bytes.checked_add(len) {
+                Some(total) if total <= 65536 => s.handshake_bytes = total,
+                _ => {
+                    s.admitted = false;
+                    s.failed = true;
+                    return -1;
+                }
+            }
         }
         match s
             .conn

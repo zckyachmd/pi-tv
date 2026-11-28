@@ -1,0 +1,15 @@
+go-client scenario=positive client_exit=0 server_exit=0 EXCHANGE client TLS=0x0304 cipher=0x1301 full=true verified=true alpn=pi-tv-experiment/1 messages=2 local_close_sent=true peer_eof_observed=true
+go-client scenario=resumption client_exit=0 server_exit=0 EXCHANGE client TLS=0x0304 cipher=0x1301 full=true verified=true alpn=pi-tv-experiment/1 messages=2 local_close_sent=true peer_eof_observed=true
+go-client scenario=wrong-pin client_exit=1 server_exit=1 peer error: admission failed
+go-client scenario=wrong-host client_exit=1 server_exit=1 peer error: tls: failed to verify certificate: x509: certificate is valid for pi-tv.test, not wrong.test
+go-client scenario=rogue-root client_exit=1 server_exit=1 peer error: tls: failed to verify certificate: x509: certificate signed by unknown authority
+go-client scenario=wrong-alpn client_exit=1 server_exit=1 peer error: remote error: tls: no application protocol
+go-client scenario=tls12 client_exit=1 server_exit=1 peer error: remote error: tls: protocol version not supported
+swift-client scenario=positive client_exit=0 server_exit=0 PASS swift-client TLS=0x0304 cipher=0x1301 full=true verified=true alpn=pi-tv-experiment/1 messages=2 close_notify=both
+swift-client scenario=wrong-pin client_exit=1 server_exit=1 independent failed: Failure(message: "server pin")
+swift-client scenario=wrong-host client_exit=1 server_exit=1 independent failed: Failure(message: "client process: 7128")
+swift-client scenario=rogue-root client_exit=1 server_exit=1 independent failed: Failure(message: "client process: 7127")
+swift-client scenario=wrong-alpn client_exit=1 server_exit=1 independent failed: Failure(message: "client process: 7233")
+swift-client scenario=tls12 client_exit=1 server_exit=1 independent failed: Failure(message: "client process: 7219")
+LIMITATION go-client EOF is indistinguishable from close_notify at record boundary
+PASS swift-client unexpected EOF

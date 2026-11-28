@@ -22,12 +22,14 @@ func frame(_ payload: [UInt8]) -> [UInt8] {
 final class FrameDecoder {
     private var pending: [UInt8] = []
     func feed(_ bytes: [UInt8]) throws -> [[UInt8]] {
+        guard bytes.count <= 4096, pending.count <= 4096, bytes.count <= 8192 - pending.count else { throw Failure("frame input budget") }
         pending += bytes
         var messages: [[UInt8]] = []
         while pending.count >= 4 {
             let count = pending.prefix(4).reduce(0) { ($0 << 8) | Int($1) }
             guard count <= 4092 else { throw Failure("oversized frame") }
             guard pending.count >= count + 4 else { break }
+            guard messages.count < 1024 else { throw Failure("frame output budget") }
             messages.append(Array(pending[4..<(4 + count)])); pending.removeFirst(4 + count)
         }
         guard pending.count <= 4096 else { throw Failure("frame buffer limit") }
@@ -42,23 +44,25 @@ func unframe(_ bytes: [UInt8]) throws -> [UInt8] {
 }
 
 final class Client {
-    enum State { case handshaking, admitted, failed, shutdown }
+    enum State { case handshaking, admitted, failed, closing, closed }
     private let handle: OpaquePointer
     private(set) var state: State = .handshaking
     private(set) var generation: UInt64 = 1
     private var inCall = false
     private let thread = Thread.current
-    func access<T>(generation token: UInt64, _ body: () throws -> T) throws -> T {
-        guard Thread.current === thread, token == generation, state != .failed, state != .shutdown, !inCall else { throw Failure("stale or reentrant client operation") }
+    func access<T>(generation token: UInt64, allowClosing: Bool = false, _ body: () throws -> T) throws -> T {
+        guard Thread.current === thread, token == generation, state != .failed, state != .closed, (allowClosing || state != .closing), !inCall else { throw Failure("stale or reentrant client operation") }
         inCall = true; defer { inCall = false }
         return try body()
     }
-    func cancel() { if state != .failed && state != .shutdown { state = .failed; generation += 1 } }
+    func cancel() { if state != .failed && state != .closed { state = .failed; generation += 1 } }
     private let pin: [UInt8]
     private let expectedALPN = Array("pi-tv-experiment/1".utf8)
     init(_ handle: OpaquePointer, pin: [UInt8]) { self.handle = handle; self.pin = pin }
     func fail() { cancel() }
+    func isHandshaking() throws -> Bool { try access(generation: generation) { rustls_connection_is_handshaking(handle) } }
     func admit() throws {
+        try access(generation: generation) {
         guard state == .handshaking else { throw Failure("invalid admission state") }
         guard !rustls_connection_is_handshaking(handle), rustls_connection_get_protocol_version(handle) == 0x0304,
               rustls_connection_handshake_kind(handle) == RUSTLS_HANDSHAKE_KIND_FULL else { fail(); throw Failure("protocol/handshake kind") }
@@ -70,6 +74,7 @@ final class Client {
         do { try check(rustls_certificate_get_der(peer, &der, &length), "server certificate der") } catch { fail(); throw error }
         guard let der, Array(UnsafeBufferPointer(start: der, count: length)) == pin else { fail(); throw Failure("server pin") }
         state = .admitted; Trace.admitted += 1
+        }
     }
     func write(_ bytes: [UInt8]) throws -> Int {
         guard state == .admitted else { throw Failure("client not admitted") }
@@ -92,11 +97,16 @@ final class Client {
     }
     func shutdown() throws {
         guard state == .admitted else { throw Failure("client not admitted") }
-        rustls_connection_send_close_notify(handle); state = .shutdown
+        try access(generation: generation) { rustls_connection_send_close_notify(handle); state = .closing }
+    }
+    func finishClose() throws {
+        guard state == .closing else { throw Failure("invalid close state") }
+        state = .closed; generation += 1
     }
 }
 
 func run() throws {
+do { _ = try FrameDecoder().feed([UInt8](repeating: 0, count: 4097)); throw Failure("accepted input budget") } catch let e as Failure { guard e.message == "frame input budget" else { throw e } }
 let parser = FrameDecoder()
 let sample = frame([1, 2, 3])
 guard try parser.feed(Array(sample.prefix(2))).isEmpty, try parser.feed(Array(sample[2..<5])).isEmpty,
@@ -218,6 +228,8 @@ if scenario == "inject-panic" { try check(RUSTLS_RESULT_PANIC.rawValue, "injecte
 var serverBytes = 0
 var didCorrupt = false
 var closing = false
+var delayedOut: (UInt64, Int)?
+var delayedIn: (UInt64, Int)?
 if scenario == "pre-admission" || scenario == "oversized" {
     let data = [UInt8](repeating: 1, count: scenario == "oversized" ? 4097 : 1)
     let result = data.withUnsafeBufferPointer { p in scenario == "oversized" ? experiment_server_input(server, p.baseAddress, p.count) : experiment_server_write(server, p.baseAddress, p.count) }
@@ -227,8 +239,24 @@ if scenario == "pre-admission" || scenario == "oversized" {
     throw Failure(scenario == "oversized" ? "oversized input rejected" : "pre-admission rejected")
 }
 func pump() throws {
+    try clientOwner.access(generation: clientOwner.generation, allowClosing: true) {
+    if let (id, count) = delayedOut, scenario != "lost-ack" {
+        if count >= 2 { guard out.receipt(id) else { throw Failure("invalid delayed receipt") }; delayedOut = nil }
+        else { delayedOut = (id, count + 1) }
+    }
+    if let (id, count) = delayedIn {
+        if count >= 2 { guard input.receipt(id) else { throw Failure("invalid delayed receipt") }; delayedIn = nil }
+        else { delayedIn = (id, count + 1) }
+    }
     if rustls_connection_wants_write(client) && out.outstanding == nil {
         var n = 0; let e: Int32 = scenario == "inject-einval" ? EINVAL : scenario == "inject-eio" ? EIO : scenario == "inject-wouldblock" ? EWOULDBLOCK : rustls_connection_write_tls(client, writeCB, outPtr, &n); switch classifyIO(e) { case .ok: break; case .wouldBlock: return; case .ambiguous: throw Failure("ambiguous FFI I/O failure"); case .fatal: throw Failure("fatal FFI I/O failure \(e)") }
+    }
+    if !out.bytes.isEmpty && ((scenario == "cancel-handshake" && Trace.admitted == 0) || (scenario == "cancel-transfer" && Trace.admitted == 1)) {
+        let old = clientOwner.generation
+        clientOwner.cancel(); clientOwner.cancel()
+        do { _ = try clientOwner.access(generation: old) { 1 }; throw Failure("stale callback allowed") }
+        catch let e as Failure { guard e.message == "stale or reentrant client operation" else { throw e } }
+        throw Failure(scenario == "cancel-handshake" ? "cancelled handshake" : "cancelled transfer")
     }
     if !out.bytes.isEmpty {
         guard let id = out.outstanding else { throw Failure("missing chunk id") }
@@ -238,7 +266,10 @@ func pump() throws {
         if scenario == "corrupt" && !didCorrupt { out.bytes[0] = 0; didCorrupt = true }
         let n = out.bytes.withUnsafeBufferPointer { experiment_server_input(server, $0.baseAddress, $0.count) }
         guard n > 0 else { throw Failure("server input") }; out.bytes.removeFirst(n)
-        if out.bytes.isEmpty, let id = out.outstanding { guard out.receipt(scenario == "invalid-ack" ? id + 1 : id) else { throw Failure("invalid receipt") } }
+        if out.bytes.isEmpty, let id = out.outstanding {
+            if scenario == "delayed-ack" || scenario == "lost-ack" { delayedOut = (id, 0) }
+            else { guard out.receipt(scenario == "invalid-ack" ? id + 1 : id) else { throw Failure("invalid receipt") } }
+        }
     }
     if input.outstanding == nil {
         var bytes = [UInt8](repeating: 0, count: 4096)
@@ -249,12 +280,16 @@ func pump() throws {
     if !input.bytes.isEmpty {
         var n = 0; let e = rustls_connection_read_tls(client, readCB, inPtr, &n); guard e == 0, n > 0 else { throw Failure("client read tls \(e)") }
         try check(rustls_connection_process_new_packets(client), "client process")
-        if input.bytes.isEmpty, let id = input.outstanding { guard input.receipt(id) else { throw Failure("invalid receipt") } }
+        if input.bytes.isEmpty, let id = input.outstanding {
+            if scenario == "delayed-ack" { delayedIn = (id, 0) }
+            else { guard input.receipt(id) else { throw Failure("invalid receipt") } }
+        }
+    }
     }
 }
 for _ in 0..<1000 {
     try pump()
-    if !rustls_connection_is_handshaking(client) && experiment_server_admit(server) == 1 { break }
+    if (try !clientOwner.isHandshaking()) && experiment_server_admit(server) == 1 { break }
     if DispatchTime.now().uptimeNanoseconds - started > 5_000_000_000 { throw Failure("handshake deadline") }
 }
 guard !rustls_connection_is_handshaking(client), experiment_server_admit(server) == 1 else { throw Failure("handshake incomplete") }
@@ -263,13 +298,15 @@ var emptyProbe = [UInt8](repeating: 0, count: 1)
 guard try clientOwner.read(&emptyProbe) == -1 else { throw Failure("plaintext empty mapping") }
 let handshakeMs = Double(DispatchTime.now().uptimeNanoseconds - started) / 1_000_000
 let messageStarted = DispatchTime.now().uptimeNanoseconds
-let message = frame(Array("swift-to-rust".utf8))
+let requestPayload: [UInt8] = scenario == "large" ? [UInt8](repeating: 0x41, count: 4092) : Array("swift-to-rust".utf8)
+let replyPayload: [UInt8] = scenario == "large" ? [UInt8](repeating: 0x42, count: 4092) : Array("rust-to-swift".utf8)
+let message = frame(requestPayload)
 let written = try clientOwner.write(message)
 guard written == message.count else { throw Failure("short write") }
-let reply = frame(Array("rust-to-swift".utf8))
+let reply = frame(replyPayload)
 let replyCount = reply.withUnsafeBufferPointer { experiment_server_write(server, $0.baseAddress, $0.count) }
 guard replyCount == reply.count else { throw Failure("server write") }
-for _ in 0..<20 { try pump() }
+for _ in 0..<100 { try pump() }
 var received = [UInt8](repeating: 0, count: 3)
 let serverParser = FrameDecoder()
 var serverMessages: [[UInt8]] = []
@@ -280,14 +317,16 @@ for _ in 0..<4096 {
     if !serverMessages.isEmpty { break }
 }
 try serverParser.finish()
-guard serverMessages == [Array("swift-to-rust".utf8)] else { throw Failure("server plaintext") }
+guard serverMessages == [requestPayload] else { throw Failure("server plaintext") }
 Trace.delivered += 1
-if scenario == "replay" {
-    let result = out.lastChunk.withUnsafeBufferPointer { experiment_server_input(server, $0.baseAddress, $0.count) }
+if scenario == "record" { try Data(out.lastChunk).write(to: URL(fileURLWithPath: dir + "/previous-ciphertext.bin")) }
+if scenario == "replay" || scenario == "previous-replay" {
+    let replay = scenario == "previous-replay" ? file("previous-ciphertext.bin") : out.lastChunk
+    let result = replay.withUnsafeBufferPointer { experiment_server_input(server, $0.baseAddress, $0.count) }
     guard result == -1 else { throw Failure("replayed ciphertext accepted") }
     throw Failure("replayed ciphertext rejected")
 }
-for _ in 0..<20 { try pump() }
+for _ in 0..<100 { try pump() }
 let clientParser = FrameDecoder()
 var clientMessages: [[UInt8]] = []
 for _ in 0..<4096 {
@@ -297,16 +336,18 @@ for _ in 0..<4096 {
     if !clientMessages.isEmpty { break }
 }
 try clientParser.finish()
-guard clientMessages == [Array("rust-to-swift".utf8)] else { throw Failure("client plaintext mismatch") }
+guard clientMessages == [replyPayload] else { throw Failure("client plaintext mismatch") }
 Trace.delivered += 1
 var read = 0
 let messageMs = Double(DispatchTime.now().uptimeNanoseconds - messageStarted) / 1_000_000
 if scenario == "truncate" {
     let eof: rustls_read_callback = { _, _, _, n in n!.pointee = 0; return 0 }
     var consumed = 1
-    guard rustls_connection_read_tls(client, eof, nil, &consumed) == 0, consumed == 0 else { throw Failure("EOF injection failed") }
-    var count = 0
-    let result = received.withUnsafeMutableBufferPointer { rustls_connection_read(client, $0.baseAddress, $0.count, &count) }
+    let result: UInt32 = try clientOwner.access(generation: clientOwner.generation) {
+        guard rustls_connection_read_tls(client, eof, nil, &consumed) == 0, consumed == 0 else { throw Failure("EOF injection failed") }
+        var count = 0
+        return received.withUnsafeMutableBufferPointer { rustls_connection_read(client, $0.baseAddress, $0.count, &count) }
+    }
     guard result == RUSTLS_RESULT_UNEXPECTED_EOF.rawValue else { throw Failure("missing unexpected EOF") }
     throw Failure("unexpected EOF detected")
 }
@@ -314,15 +355,21 @@ closing = true
 try clientOwner.shutdown()
 do { _ = try clientOwner.write([1]); throw Failure("shutdown client write allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
 do { _ = try clientOwner.read(&premature); throw Failure("shutdown client read allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
-for _ in 0..<20 { try pump() }
+for _ in 0..<100 { try pump() }
 let serverEOF = received.withUnsafeMutableBufferPointer { experiment_server_read(server, $0.baseAddress, $0.count) }
 guard serverEOF == 0 else { throw Failure("server close_notify") }
 guard experiment_server_close(server) == 0 else { throw Failure("server close") }
-for _ in 0..<20 { try pump() }
+let closedWrite = reply.withUnsafeBufferPointer { experiment_server_write(server, $0.baseAddress, $0.count) }
+guard closedWrite == -1 else { throw Failure("server write after close") }
+for _ in 0..<100 { try pump() }
 read = -1
-try check(received.withUnsafeMutableBufferPointer { rustls_connection_read(client, $0.baseAddress, $0.count, &read) }, "client close")
+let cipher = try clientOwner.access(generation: clientOwner.generation, allowClosing: true) {
+    try check(received.withUnsafeMutableBufferPointer { rustls_connection_read(client, $0.baseAddress, $0.count, &read) }, "client close")
+    return rustls_connection_get_negotiated_ciphersuite(client)
+}
 guard read == 0 else { throw Failure("client close_notify") }
-print("TLS=0x0304 cipher=0x\(String(rustls_connection_get_negotiated_ciphersuite(client), radix: 16)) full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=\(handshakeMs) message_ms=\(messageMs) client_cipher=\(out.total) server_cipher=\(serverBytes) queue_high=\(max(out.high,input.high)) messages=2 close_notify=both")
+try clientOwner.finishClose()
+print("TLS=0x0304 cipher=0x\(String(cipher, radix: 16)) full=1 mutual-pins=1 alpn=pi-tv-experiment/1 handshake_ms=\(handshakeMs) message_ms=\(messageMs) client_cipher=\(out.total) server_cipher=\(serverBytes) queue_high=\(max(out.high,input.high)) messages=2 close_notify=both")
 }
 let beforeFree = experiment_server_free_count()
 do {

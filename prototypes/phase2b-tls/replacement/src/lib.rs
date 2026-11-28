@@ -23,6 +23,8 @@ pub struct Server {
     expected_client: Vec<u8>,
     admitted: bool,
     failed: bool,
+    local_closing: bool,
+    peer_closed: bool,
 }
 
 #[no_mangle]
@@ -93,6 +95,8 @@ pub unsafe extern "C" fn experiment_server_new(
             expected_client: client,
             admitted: false,
             failed: false,
+            local_closing: false,
+            peer_closed: false,
         }))
     }))
     .unwrap_or_else(|_| std::ptr::null_mut())
@@ -250,7 +254,7 @@ pub unsafe extern "C" fn experiment_server_write(
             s.failed = true;
             return -1;
         }
-        if s.failed {
+        if s.failed || s.local_closing || s.peer_closed {
             return -1;
         }
         if !s.admitted {
@@ -296,6 +300,10 @@ pub unsafe extern "C" fn experiment_server_read(
             return -1;
         }
         match s.conn.reader().read(slice::from_raw_parts_mut(data, len)) {
+            Ok(0) => {
+                s.peer_closed = true;
+                0
+            }
             Ok(n) => n as isize,
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => -2,
             Err(_) => {
@@ -321,10 +329,11 @@ pub unsafe extern "C" fn experiment_server_close(server: *mut Server) -> i32 {
             return -1;
         }
         let s = &mut *server;
-        if s.failed || !s.admitted {
+        if s.failed || !s.admitted || s.local_closing {
             return -1;
         }
         s.conn.send_close_notify();
+        s.local_closing = true;
         0
     }))
     .unwrap_or_else(|_| {

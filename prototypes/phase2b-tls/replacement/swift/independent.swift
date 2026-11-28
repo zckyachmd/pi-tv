@@ -39,12 +39,12 @@ builder = nil // build consumes the builder on success and failure
 try check(buildResult, "client config")
 guard let config else { throw Failure("config") }
 defer { rustls_client_config_free(config) }
-let clientOwner: Client = try {
+let clientOwner = try Client.create(pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER) {
     var raw: OpaquePointer?
     try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
     guard let raw else { throw Failure("client") }
-    return try Client(raw, pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER)
-}()
+    return raw
+}
 defer { clientOwner.fail() }
 do { _ = try clientOwner.write([1]); throw Failure("pre-admission client write allowed") } catch let e as Failure { guard e.message == "client not admitted" else { throw e } }
 var premature = [UInt8](repeating: 0, count: 4)
@@ -97,15 +97,15 @@ try clientOwner.admit()
 let send = frame(Array("go-to-rustls".utf8))
 guard try clientOwner.write(send) == send.count else { throw Failure("short write") }
 try flush()
-var message = [UInt8](repeating: 0, count: 128), messages: [[UInt8]] = []
+var message = [UInt8](repeating: 0, count: 128), messages: [DecodedMessage] = []
 for _ in 0..<100 {
     let count = try clientOwner.read(&message)
     if count == -1 { try receive(); continue }
     if count == 0 { try parser.finish(); throw Failure("message EOF") }
-    messages += try parser.feed(Array(message.prefix(count)))
+    messages += try parser.feed(message.prefix(count))
     if !messages.isEmpty { break }
 }
-guard messages == [Array("rustls-to-go".utf8)] else { throw Failure("message") }
+guard messages.count == 1, messages[0].matches(Array("rustls-to-go".utf8)) else { throw Failure("message") }
 try parser.finish()
 Trace.delivered += 1
 let cipher = try clientOwner.cipher()
@@ -127,10 +127,10 @@ print("PASS swift-client TLS=0x0304 cipher=0x\(String(cipher,radix:16)) full=tru
 let before = Client.destructions
 do {
     try run()
-    guard Client.destructions == before + 1 else { throw Failure("client cleanup count") }
+    guard Client.destructions == before + 1, ApplicationBudget.shared.used == 0 else { throw Failure("client cleanup count") }
     print("RESULT completed admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=1")
 } catch {
-    let cleanup = Client.destructions == before + 1 ? 1 : 0
+    let cleanup = Client.destructions == before + 1 && ApplicationBudget.shared.used == 0 ? 1 : 0
     let reason = (error as? Failure)?.message ?? "unknown"
     fputs("RESULT rejected reason=\(reason) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=\(cleanup)\n", stderr)
     exit(cleanup == 1 ? 1 : 2)

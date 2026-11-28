@@ -1,11 +1,18 @@
 final class ServerOwner {
-    private let handle: OpaquePointer
+    private var handle: OpaquePointer?
     private let thread = Thread.current
     private var inCall = false
-    init(_ handle: OpaquePointer) { self.handle = handle }
-    deinit { experiment_server_free(handle) }
+    init(_ handle: OpaquePointer) { precondition(Thread.isMainThread); self.handle = handle }
+    func dispose() {
+        precondition(Thread.current === thread && !inCall)
+        if let handle { self.handle = nil; experiment_server_free(handle) }
+    }
+    deinit {
+        if Thread.current === thread { dispose() }
+        else if let handle { DispatchQueue.main.async { experiment_server_free(handle) } }
+    }
     private func call<T>(_ fallback: T, _ body: (OpaquePointer) -> T) -> T {
-        guard Thread.current === thread, !inCall else { return fallback }
+        guard Thread.current === thread, !inCall, let handle else { return fallback }
         inCall = true; defer { inCall = false }
         return body(handle)
     }
@@ -19,16 +26,41 @@ final class ServerOwner {
 }
 
 func run() throws {
+do {
+    let decoder = FrameDecoder()
+    var retained: [DecodedMessage]? = try decoder.feed(frame([1, 2, 3]))
+    guard retained?.first?.matches([1, 2, 3]) == true, ApplicationBudget.shared.used == 35 else { throw Failure("decoded reservation") }
+    retained = nil
+    guard ApplicationBudget.shared.used == 0 else { throw Failure("decoded release") }
+}
+do {
+    guard ApplicationBudget.shared.reserve(16375) else { throw Failure("output budget setup") }
+    defer { ApplicationBudget.shared.release(16375) }
+    do { _ = try FrameDecoder().feed(frame([1, 2, 3])); throw Failure("output budget accepted") }
+    catch let e as Failure { guard e.message == "aggregate output budget" else { throw e } }
+}
+do {
+    let decoder = FrameDecoder()
+    var messages: [DecodedMessage] = []
+    for _ in 0..<511 { messages += try decoder.feed([0, 0, 0, 0]) }
+    do { _ = try decoder.feed([0, 0, 0, 0]); throw Failure("empty message budget accepted") }
+    catch let e as Failure { guard e.message == "aggregate output budget" else { throw e } }
+    guard messages.count == 511 else { throw Failure("empty message count") }
+}
 do { _ = try FrameDecoder().feed([UInt8](repeating: 0, count: 4097)); throw Failure("accepted input budget") } catch let e as Failure { guard e.message == "frame input budget" else { throw e } }
+do {
 let parser = FrameDecoder()
 let sample = frame([1, 2, 3])
-guard try parser.feed(Array(sample.prefix(2))).isEmpty, try parser.feed(Array(sample[2..<5])).isEmpty,
-      try parser.feed(Array(sample.dropFirst(5)) + frame([4])) == [[1, 2, 3], [4]] else { throw Failure("stream parser") }
+guard try parser.feed(Array(sample.prefix(2))).isEmpty, try parser.feed(Array(sample[2..<5])).isEmpty else { throw Failure("stream parser") }
+let parsed = try parser.feed(Array(sample.dropFirst(5)) + frame([4]))
+guard parsed.count == 2, parsed[0].matches([1, 2, 3]), parsed[1].matches([4]) else { throw Failure("stream parser") }
 try parser.finish()
+}
 guard try FrameDecoder().feed(frame([UInt8](repeating: 1, count: 4092))).first?.count == 4092 else { throw Failure("max frame") }
 do { _ = try FrameDecoder().feed([0, 0, 16, 0]); throw Failure("accepted oversize") } catch let e as Failure { guard e.message == "oversized frame" else { throw e } }
 do { _ = try unframe([0, 0, 0, 3, 42]); throw Failure("accepted incomplete frame") } catch let e as Failure { guard e.message == "incomplete frame" else { throw e } }
 precondition(classifyIO(0) == .ok && classifyIO(EWOULDBLOCK) == .wouldBlock && classifyIO(EINVAL) == .ambiguous && classifyIO(EIO) == .fatal)
+ApplicationBudget.shared.resetPeak()
 
 let dir = CommandLine.arguments[1]
 let scenario = CommandLine.arguments.count > 2 ? CommandLine.arguments[2] : "positive"
@@ -48,6 +80,7 @@ let serverOwner: ServerOwner = try {
     guard let raw else { throw Failure("server init") }
     return ServerOwner(raw)
 }()
+defer { serverOwner.dispose() }
 guard let provider = rustls_ring_crypto_provider() else { throw Failure("provider") }
 defer { rustls_crypto_provider_free(provider) }
 guard let rootBuilder = rustls_root_cert_store_builder_new() else { throw Failure("root builder") }
@@ -94,21 +127,44 @@ guard let config else { throw Failure("config") }
 defer { rustls_client_config_free(config) }
 if scenario == "inject-connection" { throw Failure("injected connection failure") }
 func makeClient() throws -> Client {
-    var raw: OpaquePointer?
-    try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
-    guard let raw else { throw Failure("client") }
-    return try Client(raw, pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER)
+    try Client.create(pin: scenario == "wrong-server-pin" || scenario == "wrong-pin" ? [] : serverDER) {
+        var raw: OpaquePointer?
+        try check(rustls_client_connection_new(config, scenario == "wrong-host" ? "wrong.test" : "pi-tv.test", &raw), "client")
+        guard let raw else { throw Failure("client") }
+        return raw
+    }
 }
 let clientOwner = try makeClient()
 defer { clientOwner.fail() }
 if scenario == "context-exhaustion" {
-    let second = try makeClient()
-    guard try second.isHandshaking() else { throw Failure("second context") }
+    let attempts = experiment_server_attempt_count(), created = experiment_server_created_count()
+    let overlappingServer = caDER.withUnsafeBufferPointer { ca in selectedServer.withUnsafeBufferPointer { cert in serverKey.withUnsafeBufferPointer { key in expectedClient.withUnsafeBufferPointer { client in
+        experiment_server_new(ca.baseAddress, ca.count, cert.baseAddress, cert.count, key.baseAddress, key.count, client.baseAddress, client.count)
+    } } } }
+    guard overlappingServer == nil, experiment_server_attempt_count() == attempts + 1, experiment_server_created_count() == created else { experiment_server_free(overlappingServer); throw Failure("server context limit") }
+    let before = Client.destructions
+    var allocated = false
+    do { _ = try Client.create(pin: []) { allocated = true; throw Failure("unexpected allocation") }; throw Failure("context limit not enforced") }
+    catch let e as Failure { guard e.message == "client context limit", !allocated else { throw e } }
     do { _ = try makeClient(); throw Failure("context limit not enforced") }
     catch let e as Failure { guard e.message == "client context limit" else { throw e } }
+    try clientOwner.cancel(); try clientOwner.cancel()
+    guard Client.destructions == before + 1 else { throw Failure("client disposal count") }
+    do { _ = try Client.create(pin: []) { throw Failure("allocation failure") }; throw Failure("allocation accepted") }
+    catch let e as Failure { guard e.message == "allocation failure" else { throw e } }
+    let replacement = try makeClient()
+    let replacementToken = replacement.token
+    var submitted = "pending"
+    DispatchQueue.global().async { replacement.submit(replacementToken) { submitted = $0 ? "accepted" : "rejected" } }
+    let deadline = Date().addingTimeInterval(1)
+    while submitted == "pending" && Date() < deadline { RunLoop.current.run(until: Date().addingTimeInterval(0.001)) }
+    guard submitted == "accepted" else { throw Failure("cross-thread event routing") }
+    try replacement.cancel(); try replacement.cancel()
+    guard Client.destructions == before + 2 else { throw Failure("replacement disposal count") }
     throw Failure("context limit rejected")
 }
 if scenario == "deferred-event" {
+    try clientOwner.cancel()
     func expiredEvent() throws -> (Client.EventToken, () -> Bool) {
         var original: Client? = try makeClient()
         let token = original!.token
@@ -168,14 +224,13 @@ final class Buffer {
     var bytes: [UInt8] = []
     var total = 0
     var high = 0
-    var lastChunk: [UInt8] = []
     var nextID: UInt64 = 1
     var outstanding: UInt64?
     var receivedID: UInt64 = 0
-    func enqueue(_ chunk: [UInt8]) -> Bool {
+    func enqueue<C: Collection>(_ chunk: C) -> Bool where C.Element == UInt8 {
         guard outstanding == nil, bytes.isEmpty, !chunk.isEmpty, chunk.count <= 4096, budget.reserve(chunk.count) else { return false }
         guard ApplicationBudget.shared.reserve(chunk.count) else { budget.release(chunk.count); return false }
-        bytes = chunk; lastChunk = chunk; sentAt = clock.ticks; outstanding = nextID; nextID += 1; high = max(high, chunk.count); total += chunk.count
+        bytes = Array(chunk); sentAt = clock.ticks; outstanding = nextID; nextID += 1; high = max(high, chunk.count); total += chunk.count
         return true
     }
     func receipt(_ id: UInt64) -> Bool {
@@ -189,7 +244,8 @@ let out = Buffer(clock: clock, budget: cipherBudget, owner: clientOwner), input 
 if scenario == "aggregate-budget" {
     let first = FrameDecoder(), second = FrameDecoder()
     let partial = Array(frame([UInt8](repeating: 0, count: 4092)).prefix(4095))
-    guard try first.feed(partial).isEmpty, try second.feed(partial).isEmpty else { throw Failure("aggregate setup") }
+    let secondSize = 4095 - ApplicationBudget.shared.used
+    guard secondSize >= 4, try first.feed(partial).isEmpty, try second.feed(partial.prefix(secondSize)).isEmpty else { throw Failure("aggregate setup") }
     let chunk = [UInt8](repeating: 0, count: 4096)
     guard out.enqueue(chunk), input.enqueue(chunk), ApplicationBudget.shared.used == 16382 else { throw Failure("aggregate setup") }
     do { _ = try FrameDecoder().feed([0, 0, 0]); throw Failure("aggregate limit accepted") }
@@ -210,7 +266,7 @@ let writeCB: rustls_write_callback = { ctx, p, n, count in
     let b = Unmanaged<Buffer>.fromOpaque(ctx!).takeUnretainedValue()
     guard let owner = b.owner, owner.callbackValid(b.event) else { return EINVAL }
     guard b.outstanding == nil else { return EWOULDBLOCK }
-    let take = min(n, 127); guard b.enqueue(Array(UnsafeBufferPointer(start: p, count: take))) else { return EIO }; count!.pointee = take; return 0
+    let take = min(n, 127); guard b.enqueue(UnsafeBufferPointer(start: p, count: take)) else { return EIO }; count!.pointee = take; return 0
 }
 let readCB: rustls_read_callback = { ctx, p, n, count in
     let b = Unmanaged<Buffer>.fromOpaque(ctx!).takeUnretainedValue()
@@ -237,6 +293,7 @@ try clientOwner.access(token: token) {
 }
 if scenario == "inject-panic" { try check(RUSTLS_RESULT_PANIC.rawValue, "injected") }
 var serverBytes = 0
+var replayCapture: [UInt8] = []
 var didCorrupt = false
 var closing = false
 var delayedOut: (UInt64, Int)?
@@ -298,6 +355,7 @@ func pump() throws {
         guard incomingID == out.receivedID + 1 else { throw Failure("invalid chunk sequence") }
         if (scenario == "lost-middle" && id == 2) || (scenario == "lost-final" && closing) { out.discard(); return }
         if scenario == "corrupt" && !didCorrupt { out.bytes[0] = 0; didCorrupt = true }
+        if scenario == "replay" || scenario == "record" { replayCapture = out.bytes }
         let n = serverOwner.input(out.bytes)
         guard n > 0 else { throw Failure("server input") }; out.consume(n)
         if out.bytes.isEmpty, let id = out.outstanding {
@@ -309,7 +367,7 @@ func pump() throws {
         var bytes = [UInt8](repeating: 0, count: 4096)
         let n = serverOwner.output(&bytes)
         guard n >= 0 else { throw Failure("server output") }
-        if n > 0 { guard input.enqueue(Array(bytes.prefix(n))) else { throw Failure("server queue") }; serverBytes += n }
+        if n > 0 { guard input.enqueue(bytes.prefix(n)) else { throw Failure("server queue") }; serverBytes += n }
     }
     if !input.bytes.isEmpty {
         var n = 0; let e = (try clientOwner.readTLS(readCB, inPtr, &n)); guard e == 0, n > 0 else { throw Failure("client read tls \(e)") }
@@ -390,35 +448,40 @@ guard replyCount == reply.count else { throw Failure("server write") }
 for _ in 0..<100 { try pump() }
 var received = [UInt8](repeating: 0, count: 3)
 let serverParser = FrameDecoder()
-var serverMessages: [[UInt8]] = []
+var serverMessages: [DecodedMessage] = []
 for _ in 0..<4096 {
     let n = serverOwner.read(&received)
     guard n > 0 else { throw Failure("server plaintext") }
-    serverMessages += try serverParser.feed(Array(received.prefix(n)))
+    serverMessages += try serverParser.feed(received.prefix(n))
     if !serverMessages.isEmpty { break }
 }
 try serverParser.finish()
-guard serverMessages == [requestPayload] else { throw Failure("server plaintext") }
+guard serverMessages.count == 1, serverMessages[0].matches(requestPayload) else { throw Failure("server plaintext") }
 Trace.delivered += 1
-if scenario == "record" { try Data(out.lastChunk).write(to: URL(fileURLWithPath: dir + "/previous-ciphertext.bin")) }
+if scenario == "record" { try Data(replayCapture).write(to: URL(fileURLWithPath: dir + "/previous-ciphertext.bin")) }
 if scenario == "replay" || scenario == "previous-replay" {
-    let replay = scenario == "previous-replay" ? file("previous-ciphertext.bin") : out.lastChunk
+    let replay = scenario == "previous-replay" ? file("previous-ciphertext.bin") : replayCapture
     let result = serverOwner.input(replay)
     guard result == -1 else { throw Failure("replayed ciphertext accepted") }
     throw Failure("replayed ciphertext rejected")
 }
 for _ in 0..<100 { try pump() }
 let clientParser = FrameDecoder()
-var clientMessages: [[UInt8]] = []
+var clientMessages: [DecodedMessage] = []
 for _ in 0..<4096 {
     let count = try clientOwner.read(&received)
     guard count > 0 else { throw Failure("client plaintext EOF") }
-    clientMessages += try clientParser.feed(Array(received.prefix(count)))
+    clientMessages += try clientParser.feed(received.prefix(count))
     if !clientMessages.isEmpty { break }
 }
 try clientParser.finish()
-guard clientMessages == [replyPayload] else { throw Failure("client plaintext mismatch") }
+guard clientMessages.count == 1, clientMessages[0].matches(replyPayload) else { throw Failure("client plaintext mismatch") }
 Trace.delivered += 1
+if scenario == "repeated-cancel" {
+    try clientOwner.cancel()
+    print("cancel_workload_aggregate_high=\(ApplicationBudget.shared.high)")
+    return
+}
 var read = 0
 let messageMs = Double(DispatchTime.now().uptimeNanoseconds - messageStarted) / 1_000_000
 if scenario == "truncate" {
@@ -456,9 +519,16 @@ print("TLS=0x0304 cipher=0x\(String(cipher, radix: 16)) full=1 mutual-pins=1 alp
 }
 let beforeFree = experiment_server_free_count()
 do {
-    try run()
-    guard experiment_server_free_count() == beforeFree + 1 else { throw Failure("server cleanup count") }
+    let repetitions = CommandLine.arguments.count > 2 && ["repeated", "repeated-cancel"].contains(CommandLine.arguments[2]) ? 50 : 1
+    let beforeClient = Client.destructions
+    for _ in 0..<repetitions {
+        Trace.admitted = 0; Trace.delivered = 0
+        try run()
+        guard ApplicationBudget.shared.used == 0 else { throw Failure("runtime budget leak") }
+    }
+    guard experiment_server_free_count() == beforeFree + repetitions, Client.destructions == beforeClient + repetitions else { throw Failure("cleanup count") }
 } catch {
+    guard ApplicationBudget.shared.used == 0 else { fputs("runtime budget leak\n", stderr); exit(2) }
     guard experiment_server_free_count() == beforeFree + 1 else { fputs("server cleanup count failure\n", stderr); exit(2) }
     let stage = (error as? Failure)?.message ?? "unknown"
     fputs("RESULT rejected stage=\(stage) admitted=\(Trace.admitted) delivered=\(Trace.delivered) cleanup=1\n", stderr); exit(1)

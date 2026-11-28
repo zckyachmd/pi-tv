@@ -9,12 +9,22 @@ use std::{
     io::{Cursor, Read, Write},
     slice,
     sync::{
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc,
     },
 };
 
 static SERVER_FREES: AtomicUsize = AtomicUsize::new(0);
+static SERVER_ATTEMPTS: AtomicUsize = AtomicUsize::new(0);
+static SERVER_CREATED: AtomicUsize = AtomicUsize::new(0);
+static SERVER_RESERVED: AtomicBool = AtomicBool::new(false);
+
+struct ServerSlot;
+impl Drop for ServerSlot {
+    fn drop(&mut self) {
+        SERVER_RESERVED.store(false, Ordering::Release);
+    }
+}
 
 const ALPN: &[u8] = b"pi-tv-experiment/1";
 
@@ -26,6 +36,7 @@ pub struct Server {
     local_closing: bool,
     peer_closed: bool,
     handshake_bytes: usize,
+    _slot: ServerSlot,
 }
 
 #[no_mangle]
@@ -39,7 +50,15 @@ pub unsafe extern "C" fn experiment_server_new(
     client: *const u8,
     client_len: usize,
 ) -> *mut Server {
+    SERVER_ATTEMPTS.fetch_add(1, Ordering::Relaxed);
     std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        if SERVER_RESERVED
+            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+            .is_err()
+        {
+            return std::ptr::null_mut();
+        }
+        let slot = ServerSlot;
         if ca.is_null()
             || cert.is_null()
             || key.is_null()
@@ -96,7 +115,7 @@ pub unsafe extern "C" fn experiment_server_new(
             Err(_) => return std::ptr::null_mut(),
         };
         conn.set_buffer_limit(Some(16384));
-        Box::into_raw(Box::new(Server {
+        let result = Box::into_raw(Box::new(Server {
             conn,
             expected_client: client,
             admitted: false,
@@ -104,7 +123,10 @@ pub unsafe extern "C" fn experiment_server_new(
             local_closing: false,
             peer_closed: false,
             handshake_bytes: 0,
-        }))
+            _slot: slot,
+        }));
+        SERVER_CREATED.fetch_add(1, Ordering::Relaxed);
+        result
     }))
     .unwrap_or_else(|_| std::ptr::null_mut())
 }
@@ -365,6 +387,39 @@ pub unsafe extern "C" fn experiment_server_close(server: *mut Server) -> i32 {
 #[no_mangle]
 pub extern "C" fn experiment_server_free_count() -> usize {
     SERVER_FREES.load(Ordering::Relaxed)
+}
+
+#[no_mangle]
+pub extern "C" fn experiment_server_attempt_count() -> usize {
+    SERVER_ATTEMPTS.load(Ordering::Relaxed)
+}
+
+#[no_mangle]
+pub extern "C" fn experiment_server_created_count() -> usize {
+    SERVER_CREATED.load(Ordering::Relaxed)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failed_allocation_releases_server_slot() {
+        unsafe {
+            assert!(experiment_server_new(
+                std::ptr::null(),
+                0,
+                std::ptr::null(),
+                0,
+                std::ptr::null(),
+                0,
+                std::ptr::null(),
+                0
+            )
+            .is_null());
+        }
+        assert!(!SERVER_RESERVED.load(Ordering::Acquire));
+    }
 }
 
 #[no_mangle]

@@ -15,4 +15,6 @@ ssize_t experiment_server_write(Server *, const uint8_t *, size_t);
 ssize_t experiment_server_read(Server *, uint8_t *, size_t);
 int experiment_server_close(Server *);
 size_t experiment_server_free_count(void);
+size_t experiment_server_attempt_count(void);
+size_t experiment_server_created_count(void);
 int experiment_server_eof(Server *);

@@ -26,6 +26,7 @@ final class ApplicationBudget {
     private var peak = 0
     var used: Int { lock.lock(); defer { lock.unlock() }; return current }
     var high: Int { lock.lock(); defer { lock.unlock() }; return peak }
+    func resetPeak() { lock.lock(); defer { lock.unlock() }; precondition(current == 0); peak = 0 }
     func reserve(_ count: Int) -> Bool {
         lock.lock(); defer { lock.unlock() }
         guard count >= 0, count <= 16384 - current else { return false }
@@ -36,27 +37,39 @@ final class ApplicationBudget {
         precondition(count >= 0 && count <= current); current -= count
     }
 }
+final class DecodedMessage {
+    static let reservationOverhead = 32
+    private let bytes: [UInt8]
+    var count: Int { bytes.count }
+    func matches(_ other: [UInt8]) -> Bool { bytes == other }
+    func withBytes<T>(_ body: (UnsafeBufferPointer<UInt8>) throws -> T) rethrows -> T {
+        try bytes.withUnsafeBufferPointer(body)
+    }
+    init(_ bytes: [UInt8]) { self.bytes = bytes }
+    deinit { ApplicationBudget.shared.release(bytes.count + Self.reservationOverhead) }
+}
 final class FrameDecoder {
     deinit { ApplicationBudget.shared.release(pending.count) }
     private var pending: [UInt8] = []
-    func feed(_ bytes: [UInt8]) throws -> [[UInt8]] {
+    func feed<C: Collection>(_ bytes: C) throws -> [DecodedMessage] where C.Element == UInt8 {
         guard bytes.count <= 4096, pending.count <= 4096, bytes.count <= 8192 - pending.count else { throw Failure("frame input budget") }
         guard ApplicationBudget.shared.reserve(bytes.count) else { throw Failure("aggregate input budget") }
         pending += bytes
-        var messages: [[UInt8]] = []
+        var messages: [DecodedMessage] = []
         while pending.count >= 4 {
             let count = pending.prefix(4).reduce(0) { ($0 << 8) | Int($1) }
             guard count <= 4092 else { throw Failure("oversized frame") }
             guard pending.count >= count + 4 else { break }
             guard messages.count < 1024 else { throw Failure("frame output budget") }
-            messages.append(Array(pending[4..<(4 + count)])); pending.removeFirst(4 + count); ApplicationBudget.shared.release(4 + count)
+            guard ApplicationBudget.shared.reserve(count + DecodedMessage.reservationOverhead) else { throw Failure("aggregate output budget") }
+            messages.append(DecodedMessage(Array(pending[4..<(4 + count)]))); pending.removeFirst(4 + count); ApplicationBudget.shared.release(4 + count)
         }
         guard pending.count <= 4096 else { throw Failure("frame buffer limit") }
         return messages
     }
     func finish() throws { guard pending.isEmpty else { throw Failure("incomplete frame") } }
 }
-func unframe(_ bytes: [UInt8]) throws -> [UInt8] {
+func unframe(_ bytes: [UInt8]) throws -> DecodedMessage {
     let decoder = FrameDecoder(); let messages = try decoder.feed(bytes); try decoder.finish()
     guard messages.count == 1 else { throw Failure("message count") }
     return messages[0]
@@ -64,7 +77,8 @@ func unframe(_ bytes: [UInt8]) throws -> [UInt8] {
 
 final class Client {
     enum State { case handshaking, admitted, failed, closing, closed }
-    private let handle: OpaquePointer
+    private var ownedHandle: OpaquePointer?
+    private var handle: OpaquePointer { ownedHandle! }
     private static let countLock = NSLock()
     private static var activeCount = 0
     private static var destroyedCount = 0
@@ -79,6 +93,9 @@ final class Client {
     private let context = UUID()
     private(set) var generation: UInt64 = 1
     var token: EventToken { EventToken(context: context, generation: generation) }
+    func submit(_ event: EventToken, _ body: @escaping (Bool) -> Void) {
+        DispatchQueue.main.async { [weak self] in body(self?.callbackValid(event) ?? false) }
+    }
     private var inCall = false
     private let thread = Thread.current
     func callbackValid(_ event: EventToken) -> Bool {
@@ -86,24 +103,49 @@ final class Client {
     }
     func access<T>(token: EventToken, allowClosing: Bool = false, _ body: () throws -> T) throws -> T {
         guard Thread.current === thread, token == self.token, state != .failed, state != .closed, (allowClosing || state != .closing), !inCall else { throw Failure("stale or reentrant client operation") }
-        inCall = true; defer { inCall = false }
+        inCall = true; defer { inCall = false; if state == .failed || state == .closed { disposeHandle() } }
         return try body()
     }
     func cancel() throws {
         guard Thread.current === thread, !inCall else { throw Failure("stale or reentrant client operation") }
-        if state != .failed && state != .closed { state = .failed; generation += 1; releaseContext() }
+        if state != .failed && state != .closed { state = .failed; generation += 1 }
+        disposeHandle()
     }
-    private let pin: [UInt8]
+    private var pin: [UInt8]
     private let expectedALPN = Array("pi-tv-experiment/1".utf8)
-    init(_ handle: OpaquePointer, pin: [UInt8]) throws {
+    static func create(pin: [UInt8], allocate: () throws -> OpaquePointer) throws -> Client {
+        guard Thread.isMainThread else { throw Failure("client owner must be main thread") }
         Client.countLock.lock()
-        guard Client.activeCount < 2 else { Client.countLock.unlock(); rustls_connection_free(handle); throw Failure("client context limit") }
+        guard Client.activeCount == 0 else { Client.countLock.unlock(); throw Failure("client context limit") }
         Client.activeCount += 1; Client.countLock.unlock()
-        self.handle = handle; self.pin = pin; rustls_connection_set_buffer_limit(handle, 16384)
+        guard ApplicationBudget.shared.reserve(pin.count) else {
+            Client.countLock.lock(); Client.activeCount -= 1; Client.countLock.unlock()
+            throw Failure("pin budget")
+        }
+        do { return Client(try allocate(), pin: pin) }
+        catch { ApplicationBudget.shared.release(pin.count); Client.countLock.lock(); Client.activeCount -= 1; Client.countLock.unlock(); throw error }
+    }
+    private init(_ handle: OpaquePointer, pin: [UInt8]) {
+        self.ownedHandle = handle; self.pin = pin; rustls_connection_set_buffer_limit(handle, 16384)
+    }
+    private func disposeHandle() {
+        guard !inCall, let handle = ownedHandle else { return }
+        ownedHandle = nil
+        rustls_connection_free(handle)
+        let pinCount = pin.count; pin = []; ApplicationBudget.shared.release(pinCount)
+        Client.countLock.lock(); Client.destroyedCount += 1; Client.countLock.unlock()
+        releaseContext()
     }
     deinit {
-        releaseContext(); rustls_connection_free(handle)
-        Client.countLock.lock(); Client.destroyedCount += 1; Client.countLock.unlock()
+        if Thread.current === thread { disposeHandle() }
+        else if let handle = ownedHandle {
+            let pinCount = pin.count
+            DispatchQueue.main.async {
+                rustls_connection_free(handle)
+                ApplicationBudget.shared.release(pinCount)
+                Client.countLock.lock(); Client.destroyedCount += 1; Client.activeCount -= 1; Client.countLock.unlock()
+            }
+        }
     }
     func wantsWrite() throws -> Bool { try access(token: token, allowClosing: true) { rustls_connection_wants_write(handle) } }
     func writeTLS(_ callback: rustls_write_callback, _ user: UnsafeMutableRawPointer?, _ count: inout Int) throws -> Int32 {
@@ -129,7 +171,8 @@ final class Client {
     func cipher() throws -> UInt16 { try access(token: token, allowClosing: true) { rustls_connection_get_negotiated_ciphersuite(handle) } }
     func fail() {
         guard Thread.current === thread else { return }
-        if state != .failed && state != .closed { state = .failed; generation += 1; releaseContext() }
+        if state != .failed && state != .closed { state = .failed; generation += 1 }
+        disposeHandle()
     }
     func isHandshaking() throws -> Bool { try access(token: token) { rustls_connection_is_handshaking(handle) } }
     func admit() throws {
@@ -139,11 +182,11 @@ final class Client {
               rustls_connection_handshake_kind(handle) == RUSTLS_HANDSHAKE_KIND_FULL else { fail(); throw Failure("protocol/handshake kind") }
         var value: UnsafePointer<UInt8>?; var count = 0
         rustls_connection_get_alpn_protocol(handle, &value, &count)
-        guard let value, Array(UnsafeBufferPointer(start: value, count: count)) == expectedALPN else { fail(); throw Failure("ALPN") }
+        guard let value, UnsafeBufferPointer(start: value, count: count).elementsEqual(expectedALPN) else { fail(); throw Failure("ALPN") }
         guard let peer = rustls_connection_get_peer_certificate(handle, 0) else { fail(); throw Failure("server certificate") }
         var der: UnsafePointer<UInt8>?; var length = 0
         do { try check(rustls_certificate_get_der(peer, &der, &length), "server certificate der") } catch { fail(); throw error }
-        guard let der, Array(UnsafeBufferPointer(start: der, count: length)) == pin else { fail(); throw Failure("server pin") }
+        guard let der, UnsafeBufferPointer(start: der, count: length).elementsEqual(pin) else { fail(); throw Failure("server pin") }
         state = .admitted; Trace.admitted += 1
         }
     }
@@ -174,7 +217,7 @@ final class Client {
     func finishClose() throws {
         try access(token: token, allowClosing: true) {
             guard state == .closing else { throw Failure("invalid close state") }
-            state = .closed; generation += 1; releaseContext()
+            state = .closed; generation += 1
         }
     }
 }

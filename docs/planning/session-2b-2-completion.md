@@ -200,6 +200,8 @@ Physical BLE integration, iOS runtime/device operation, Raspberry Pi performance
 
 ## Targeted owner-directed closure — 2026-11-28
 
+**Owner-approved scope adjustment:** Session 2B.2 and the initial Session 2B.3 experiment are limited to one live native TLS connection per endpoint. Overlapping allocation must be rejected without a pending queue or automatic replacement. This experimental concurrency limit does not remove future multiple authorized identities or multi-user requirements; concurrent multi-client secure connections require a separately reviewed scope. The existing implementation and evidence below predate this adjustment and do not establish that the new limit is enforced.
+
 **Independent-review gate remains blocked by the application-owned lifecycle and aggregate-coverage gaps below.** The owner accepts Go 1.27.4's record-boundary EOF ambiguity solely as a test-tool limitation; Pi TV still requires authenticated shutdown. The owner does not require proof of arbitrary invalid pointers, every TLS-library allocation, full cryptographic certification or physical Bluetooth behavior in this host experiment. The following evidence is scoped accordingly and supersedes the prior suggestion that another TLS implementation was required solely for Go's EOF ambiguity.
 
 ### Executed targeted work
